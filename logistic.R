@@ -1,4 +1,3 @@
-library(tidyverse)
 library(alr4)
 set.seed(1)
 # invlogit <- plogis
