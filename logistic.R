@@ -1,38 +1,55 @@
 library(tidyverse)
 library(alr4)
 set.seed(1)
+# invlogit <- plogis
 
-invlogit <- plogis
-optim_logistic <- function(beta) {
-  alpha <- beta[1]
-  b1 <- beta[2]
-  b2 <- beta[3]
-  b3 <- beta[4]
-  pi <- invlogit(alpha + b1 * data$x1 + b2 * data$x2 + b3 * data$x3)
-  loglikelihood <- -sum(data$y * log(pi) + (1 - data$y) * log(1 - pi))
-  return(loglikelihood)
+logistic_function <- function(fn_formula, data) {
+  number_omitted <- nrow(data) - nrow(na.omit(data))
+  data <- na.omit(data)
+
+  vars <- all.vars(as.formula(fn_formula))
+  y_name <- vars[1]
+  x_name <- vars[2:length(vars)]
+  n <- nrow(data)
+  Y <- matrix(data[, y_name], nrow = n, ncol = 1)
+  X <- matrix(cbind(rep(1, n)))
+
+  var_names <- vector("character")
+  for (i in x_name) {
+    if (suppressWarnings(all(!is.na(as.numeric(as.character(data[, i])))))) {
+      X <- cbind(X, as.numeric(as.character(data[, i])))
+      var_names <- c(var_names, i)
+    } else {
+      categories <- sort(unique(data[, i]))
+      for (j in categories[2:length(categories)]) {
+        new_col_name <- paste0(i, j)
+        new_col <- ifelse(data[, i] == j, 1, 0)
+        X <- cbind(X, new_col)
+        var_names <- c(var_names, new_col_name)
+      }
+    }
+  }
+  optim_logistic <- function(beta, X, Y) {
+    beta <- as.matrix(beta, nrow = 4)
+    pi <- plogis(X %*% beta)
+    loglikelihood <- -sum(Y * log(pi) + (1 - Y) * log(1 - pi))
+    return(loglikelihood)
+  }
+  result <- optim(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y)
+  coef <- t(as.matrix(result$par))
+  colnames(coef) <- c("(Intercept)", var_names)
+  return(coef)
 }
-data <- data.frame(x1 = rnorm(100, 2, 1), x2 = rnorm(100, 4, 1), x3 = rnorm(100, 6, 1))
-data$y <- rbinom(100, size = 1, prob = invlogit(-1 + data$x1 + data$x2 - 0.5 * data$x3))
 
-result <- optim(par = rep(0, ncol(data)), fn = optim_logistic)
-result$par
+sim_data <- data.frame(x1 = rnorm(100, 2, 1), x2 = rnorm(100, 4, 1), x3 = rnorm(100, 6, 1))
+sim_data$y <- rbinom(100, size = 1, prob = plogis(-1 + sim_data$x1 + sim_data$x2 - 0.5 * sim_data$x3))
 
-glm(y ~ x1 + x2 + x3, data = data, family = binomial)
+fit_sim_data <- glm(y ~ x1 + x2 + x3, data = sim_data, family = binomial)
+coef(fit_sim_data)
+logistic_function(fn_formula = "y ~ x1 + x2 + x3", data = sim_data)
 
 
-# extend the function to be able to take in categorical data
 Donner <- Donner %>% mutate(survived = y == "survived")
-m1 <- glm(survived ~ age + sex + status, family = binomial(link = "logit"), data = Donner)
-ggplot(Donner) +
-  geom_jitter(aes(x = status, y = age, col = survived))
-
-ggplot(Donner) +
-  geom_jitter(aes(x = age, y = survived, color = survived)) +
-  facet_wrap(vars(status))
-ggplot(Donner) +
-  geom_jitter(aes(x = age, y = status, color = status)) +
-  facet_wrap(vars(survived))
-
-fit <- glm(survived ~ age + sex + status, data = Donner, family = "binomial")
-coef(fit)
+fit_Donner <- glm(survived ~ age + sex + status, data = Donner, family = "binomial")
+coef(fit_Donner)
+logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
