@@ -34,9 +34,13 @@ logistic_function <- function(fn_formula, data) {
     loglikelihood <- -sum(Y * log(pi) + (1 - Y) * log(1 - pi))
     return(loglikelihood)
   }
-  result <- optim(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y)
-  coef <- t(as.matrix(result$par))
+  result <- optim(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y, hessian = T)
+  OI <- solve(result$hessian)
+  se <- sqrt(diag(OI))
+
+  coef <- rbind(result$par, se)
   colnames(coef) <- c("(Intercept)", var_names)
+  rownames(coef) <- c("Estimate", "Std. Error")
   return(coef)
 }
 
@@ -44,11 +48,11 @@ sim_data <- data.frame(x1 = rnorm(100, 2, 1), x2 = rnorm(100, 4, 1), x3 = rnorm(
 sim_data$y <- rbinom(100, size = 1, prob = plogis(-1 + sim_data$x1 + sim_data$x2 - 0.5 * sim_data$x3))
 
 fit_sim_data <- glm(y ~ x1 + x2 + x3, data = sim_data, family = binomial)
-coef(fit_sim_data)
+t(summary(fit_sim_data)$coef)[1:2, ]
 logistic_function(fn_formula = "y ~ x1 + x2 + x3", data = sim_data)
 
 
 Donner <- Donner %>% mutate(survived = y == "survived")
 fit_Donner <- glm(survived ~ age + sex + status, data = Donner, family = "binomial")
-coef(fit_Donner)
+summary(fit_Donner)$coef
 logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
