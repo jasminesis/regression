@@ -1,0 +1,113 @@
+---
+title: "DIY Regression"
+author: "Saumya Seth, Jasmine Siswandjo"
+format: revealjs
+incremental: true
+editor: visual
+---
+```{r}
+library(tidyverse)
+library(alr4)
+```
+
+
+
+# DIY Regression
+
+Fall 2023
+
+Statistical Consulting Research Seminar
+
+## Hi Saumya
+
+We don't need to put in all the regressions, I was just playing around with the presentation!
+
+We'll probably want it to be more of a story and code chunks of the interesting stuff we tried/learnt.
+
+
+## Project requirements
+
+- For this project, you will be building your own implementations of a set of regression methods without the use of existing regression functions in R. The goal of this project is to gain a deep understanding of how regression models work under the hood. 
+
+- You will complete a write up briefly describing the assumptions and uses of each regression model, explaining when one model is preferable to others  and demonstrating that your implementation produces identical results to the 4 columns of summary output from the standard R functions. 
+
+
+## Goals of the Project: 
+- To implement our own functions for regression without using in-built regression packages in R. We will estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models
+- To highlight and check the assumptions of each model
+- To discuss the implications of breaking assumptions for the models
+- To discuss the applications of the models and compare and contrast situations where certain models may perform better than others
+
+
+## Linear regression
+
+
+## Probit regression
+
+
+## Negative Binomial regression
+
+
+## Logistic regression
+
+```{r}
+source("./logistic.R")
+```
+
+
+```{r echo=T}
+optim_logistic <- function(beta, X, Y) {
+  beta <- as.matrix(beta, nrow = 4)
+  pi <- plogis(X %*% beta)
+  loglikelihood <- -sum(Y * log(pi) + (1 - Y) * log(1 - pi))
+  return(loglikelihood)
+}
+```
+
+---
+
+```{r echo=T}
+sim_data <- data.frame(
+  x1 = rnorm(100, 2, 1), 
+  x2 = rnorm(100, 4, 1), 
+  x3 = rnorm(100, 6, 1))
+
+sim_data$y <- rbinom(
+  100, 
+  size = 1, 
+  prob = plogis(-1 + sim_data$x1 + sim_data$x2 - 0.5 * sim_data$x3)
+)
+
+
+```
+
+## Output from GLM
+
+```{r}
+fit_sim_data <- glm(y ~ x1 + x2 + x3, data = sim_data, family = binomial)
+t(summary(fit_sim_data)$coef)[1:2, ]
+```
+
+## Output from my logistic function
+
+```{r}
+logistic_function(fn_formula = "y ~ x1 + x2 + x3", data = sim_data)
+```
+
+## Also works for categorical variables
+
+```{r}
+Donner$survived <- Donner$y == "survived"
+fit_Donner <- glm(survived ~ age + sex + status, data = Donner, family = "binomial")
+```
+
+```{r echo=T}
+summary(fit_Donner)$coef
+logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
+```
+
+
+## Poisson regression
+
+
+## Zero-inflated Poisson regression

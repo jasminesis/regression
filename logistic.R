@@ -52,7 +52,7 @@ t(summary(fit_sim_data)$coef)[1:2, ]
 logistic_function(fn_formula = "y ~ x1 + x2 + x3", data = sim_data)
 
 
-Donner <- Donner %>% mutate(survived = y == "survived")
+Donner$survived <- Donner$y == "survived"
 fit_Donner <- glm(survived ~ age + sex + status, data = Donner, family = "binomial")
 summary(fit_Donner)$coef
 logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
