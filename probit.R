@@ -22,14 +22,14 @@ probit_regression <- function(data, x1, x2, ..., y) {
       Y = Y,
       method = 'BFGS'
     )
-  paste0(
-    'the intercept of the regression is ',
+  cat(
+    'The intercept of the regression is',
     result$par[1],
-    ' the coefficient of x1 is ',
+    '\nThe coefficient of x1 is',
     result$par[2],
-    ' the coefficient of x2 is ',
+    '\nThe coefficient of x2 is',
     result$par[3],
-    ' the coefficient of x3 is ',
+    '\nThe coefficient of x3 is',
     result$par[4]
   )
 }
@@ -40,14 +40,14 @@ test_probit_regression_data <- data.frame(
   x3 = rnorm(100, 5, 3),
   y = rbinom(5, size = 1, prob = 0.2)
 )
-# applying created function to test data frame
-probit_regression(
-  test_probit_regression_data,
-  x1 = test_probit_regression_data$x1,
-  x2 = test_probit_regression_data$x2,
-  x3 = test_probit_regression_data$x3,
-  y = test_probit_regression_data$y
-)
+# # applying created function to test data frame
+# probit_regression(
+#   test_probit_regression_data,
+#   x1 = test_probit_regression_data$x1,
+#   x2 = test_probit_regression_data$x2,
+#   x3 = test_probit_regression_data$x3,
+#   y = test_probit_regression_data$y
+# )
 # comparing results to glm probit output
 glm(y ~ x1 + x2 + x3,
     data = test_probit_regression_data,
