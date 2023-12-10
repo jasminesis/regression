@@ -9,6 +9,10 @@ editor: visual
 ```{r}
 library(tidyverse)
 library(alr4)
+library(pROC)
+library(ROCR)
+library(ggeffects)
+set.seed(123)
 ```
 
 # DIY Regression
@@ -39,7 +43,7 @@ Does building your regression function help you gain a deep understanding of how
 
 -   When the outcome is binary - thus, it is mainly used for classification problems
 
--   When the outcome is categorical with more than 2 categories, we use the multinomial probit regression
+-   When the outcome is categorical with more than 2 categories, we use the multinomial probit regression. We will focus on simple probit regression here
 
 -   Since we know that logistic regression is also helpful in predicting binary outcomes, what is the difference between the two?
 
@@ -47,7 +51,7 @@ Does building your regression function help you gain a deep understanding of how
 
 -   They give almost identical results - they just have different link functions (more on this later)
 
--   If z has the latent variable that we do not observe, then,
+-   If z is the latent variable that we do not observe and p is the probability of Y being 1, then,
 
     Logit has the link function:
 
@@ -69,13 +73,13 @@ Does building your regression function help you gain a deep understanding of how
 
 -   There is no 'right' answer to this debate
 
-## Our Implementation
+## Our Implementation of the Probit Function
 
 1.  Define the predictor variables
 2.  Define the outcome variable
 3.  Define the log likelihood function - this will help estimate our betas (regression coefficients)
 4.  Define an initial guess to update later in order to maximize the log likelihood
-5.  Iterate over the guesses using optim to find the parameter which maximizes the log likelihood
+5.  Iterate over the guesses using optim to find the parameter which maximizes the log likelihood of seeing the data inputted
 
 ## Our Implementation
 
@@ -137,13 +141,15 @@ summary(glm(y ~ x1 + x2 + x3,
     family = binomial(link = 'probit')))$coef
 ```
 
+-   We are currently working on estimating the standard errors using bootstrapping
+
 ## How does it work?
 
 -   In linear regression, we tried to minimize the sum of least squares
 
 -   In probit regression, we use Maximum Likelihood Estimation to get at the best estimate of our betas (regression coefficients)
 
-## Maximum Likelihood Reminder
+## Maximum Likelihood reminder
 
 -   MLE helps us determine which parameter (beta) was our data most likely to come from
 
@@ -161,6 +167,8 @@ points(x0, y + 0.05, type = 'p', col = 'blue')
 
 ## We used 'optim' to maximize our log likelihood function
 
+-   We were a bit unsure of which method of optimization to use. We decided to use optim as it proved to be user-friendly for us
+
 -   Optim is a function in R which takes in a parameter to optimize and the function whose minimum/maximum needs to be found
 
 -   There are many ways that optim can optimize the parameter value. We used a method called 'BFGS' (Broyden Fletcher Goldfarb Shanno)
@@ -175,15 +183,15 @@ points(x0, y + 0.05, type = 'p', col = 'blue')
 
     -   the updation stops when further iterations don't further maximize the log likelihood
 
-## What exactly is the latent variable?
+## What exactly are we trying to estimate - what is the latent variable?
 
--   Our latent variable is z (we do not observe it)
+-   Our latent variable is z (we do not observe it):
 
 $$
 z = \beta_0 + \beta_1x_1 + ... + \beta_nx_n + \epsilon
 $$
 
--   We want to somehow link z to the probability of our ACTUALLY OBSERVED outcome (Y) being 1. We do this using the link function phi
+-   We want to somehow link z to the probability of our **ACTUALLY OBSERVED** outcome (Y) being 1. We do this using the link function phi
 
 $$
 P(Y = 1) = \phi(z)
@@ -215,7 +223,116 @@ $$
 \phi^{-1}(P(Y = 1)) = \beta_0 + \beta_1x_1 + ... + \beta_nx_n + \epsilon
 $$
 
--   Thus, when we estimate our betas using Maximum Likelihood, we interpret them as being a change in the z score of the outcome. We then transform this z score to a probability using the z-table
+-   Note that our outcome is a z-score now
+-   Thus, when we estimate our betas using Maximum Likelihood, we interpret them as being a **change in the z-score of the outcome that we observe**. We then transform this z score to a probability using the z-table
+
+## Assumptions of Probit Regression
+
+-   The outcome is binary
+
+-   The **z-score of the outcome** and the predictor variables have a linear relationship
+
+-   The errors are normally distributed and are independent of one another
+
+## An example analysis
+
+-   Outcome 'admit' (binary) and predictor 'gpa'
+
+```{r, eval=T, echo=F}
+my_data <- read.csv('https://stats.idre.ucla.edu/stat/data/binary.csv')
+head(my_data)
+```
+
+## An example analysis
+
+```{r, eval=T, echo=F}
+ggplot(my_data, aes(x = gpa, y = admit)) +
+      geom_point() +
+      geom_smooth(method = "loess", se = FALSE) +
+      theme_classic()
+```
+
+## An example analysis
+
+-   Fitting the model
+
+```{r}
+fit_probit <- glm(admit ~ gpa, data = my_data,
+                 family = binomial(link = 'probit'))
+summary(fit_probit)$coef
+```
+
+-   Interpreting the coefficient of gpa: Comparing 2 groups of people, one who got admitted and one who did not, the average gpa of those who did get admitted is around 0.63 z-scores higher than the group which did not
+
+## AUC using the correct model
+
+```{r}
+train_indices <- sample(x = nrow(my_data), size = 320, replace = F)
+test_indices <- c(1:400)[-train_indices]
+train_probit <- my_data[train_indices,]
+test_probit <- my_data[test_indices,]
+predicted_probit_correct <- predict(fit_probit, test_probit, type='response')
+pred_probit_correct  <- prediction(predicted_probit_correct, test_probit$admit)
+perf_probit_correct <- performance(pred_probit_correct,"auc")
+auc_probit_correct <- as.numeric(perf_probit_correct@y.values)
+auc_probit_correct
+```
+
+## AUC using the wrong model (breaking the linearity assumption)
+
+-   Checking if the z-score of the outcome and predictor have a linear relationship
+
+```{r}
+my_data <- my_data %>% mutate(gpa_wrong = gpa^2)
+fit_probit_wrong <- glm(admit ~ gpa_wrong, data = my_data,
+                 family = binomial(link = 'probit'))
+train_indices <- sample(x = nrow(my_data), size = 320, replace = F)
+test_indices <- c(1:400)[-train_indices]
+train_probit <- my_data[train_indices,]
+test_probit <- my_data[test_indices,]
+predicted_probit_incorrect <- predict(fit_probit_wrong, test_probit, type='response')
+pred_probit_incorrect  <- prediction(predicted_probit_incorrect, test_probit$admit)
+perf_probit_incorrect <- performance(pred_probit_incorrect,"auc")
+auc_probit_incorrect <- as.numeric(perf_probit_incorrect@y.values)
+auc_probit_incorrect
+
+
+
+```
+
+```{r}
+
+```
+
+```{# originally, the relationship looked linear}
+ggplot(my_data, aes(x = gpa, y = my_data$admit)) +
+      geom_point() +
+      geom_smooth(method = "loess", se = FALSE) +
+      theme_classic()
+
+my_data$probabilities <- fit_probit$fitted.values
+my_data <- my_data %>%
+    mutate(probit = qnorm(probabilities))
+ggplot(my_data, aes(y = probit, x = gpa))+
+    geom_point(size = 0.5, alpha = 0.5) +
+    geom_smooth(method = 'loess') +
+    theme_bw()
+```
+
+```{r}
+
+```
+
+## Trying to break the linearity assumption
+
+```{r}
+
+
+```
+
+```{r}
+
+```
 
 ## Negative Binomial regression
 
@@ -279,3 +396,4 @@ logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
 ## Poisson regression
 
 ## Zero-inflated Poisson regression
+
