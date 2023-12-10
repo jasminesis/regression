@@ -407,32 +407,32 @@ Saumya Seth, Jasmine Siswandjo
 <p>Fall 2023</p>
 <p>Statistical Consulting Research Seminar</p>
 </section>
-<section id="hi-saumya" class="slide level2">
-<h2>Hi Saumya</h2>
-<p>We don’t need to put in all the regressions, I was just playing around with the presentation!</p>
-<p>We’ll probably want it to be more of a story and code chunks of the interesting stuff we tried/learnt.</p>
+<section id="probit-and-zeropoisson-regression-models" class="slide level2">
+<h2>Probit and Zero/Poisson Regression Models</h2>
 </section>
-<section id="project-requirements" class="slide level2">
-<h2>Project requirements</h2>
-<ul>
-<li class="fragment"><p>For this project, you will be building your own implementations of a set of regression methods without the use of existing regression functions in R. The goal of this project is to gain a deep understanding of how regression models work under the hood.</p></li>
-<li class="fragment"><p>You will complete a write up briefly describing the assumptions and uses of each regression model, explaining when one model is preferable to others and demonstrating that your implementation produces identical results to the 4 columns of summary output from the standard R functions.</p></li>
-</ul>
+<section id="guiding-question" class="slide level2">
+<h2>Guiding Question:</h2>
+<p>Does building your regression function help you gain a deep understanding of how regression models work under the hood?</p>
 </section>
 <section id="goals-of-the-project" class="slide level2">
 <h2>Goals of the Project:</h2>
 <ul>
-<li class="fragment">To implement our own functions for regression without using in-built regression packages in R. We will estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models</li>
-<li class="fragment">To highlight and check the assumptions of each model</li>
-<li class="fragment">To discuss the implications of breaking assumptions for the models</li>
-<li class="fragment">To discuss the applications of the models and compare and contrast situations where certain models may perform better than others</li>
+<li class="fragment">When would you use the regression model you chose? When is it preferable to use and when not?</li>
+<li class="fragment">Estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models - show we get similar output as R gives us</li>
+<li class="fragment">Check the assumptions of each model - probably see residuals?</li>
+<li class="fragment">Discuss the implications of breaking assumptions for the models</li>
+<li class="fragment">What are the applications of the model?</li>
+<li class="fragment">Discuss obstacles we are going through/went through + how we plan to/how we did solve them</li>
 </ul>
-</section>
-<section id="linear-regression" class="slide level2">
-<h2>Linear regression</h2>
 </section>
 <section id="probit-regression" class="slide level2">
 <h2>Probit regression</h2>
+<h4 id="when-is-it-used">When is it used?</h4>
+<ul>
+<li class="fragment"><p>When the outcome is binary</p></li>
+<li class="fragment"><p>When the outcome is categorical with more than 2 categories, we use the multinomial probit regression</p></li>
+<li class="fragment"><p>Since we know that logistic regression is also helpful in predicting binary outcomes, what is the difference between</p></li>
+</ul>
 </section>
 <section id="negative-binomial-regression" class="slide level2">
 <h2>Negative Binomial regression</h2>
@@ -499,7 +499,7 @@ statusSingle -17.4555740 1.765537e+03 -0.009886838 0.992111573</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>           (Intercept)         age    sexMale statusHired statusSingle
 Estimate     1.5039550 -0.02838637 -0.7485574  -0.5866585    -6.481174
-Std. Error   0.4943118  0.01507534  0.5180548   0.6283328    12.148867</code></pre>
+Std. Error   0.4943118  0.01507534  0.5180548   0.6283328    12.148865</code></pre>
 </div>
 </div>
 </section>

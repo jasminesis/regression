@@ -5,12 +5,11 @@ format: revealjs
 incremental: true
 editor: visual
 ---
+
 ```{r}
 library(tidyverse)
 library(alr4)
 ```
-
-
 
 # DIY Regression
 
@@ -18,42 +17,99 @@ Fall 2023
 
 Statistical Consulting Research Seminar
 
-## Hi Saumya
+## Our implementations of the Probit and Zero/Poisson Regression Models
 
-We don't need to put in all the regressions, I was just playing around with the presentation!
+## Guiding Question:
 
-We'll probably want it to be more of a story and code chunks of the interesting stuff we tried/learnt.
+Does building your regression function help you gain a deep understanding of how regression models work under the hood?
 
+## Goals of the Project:
 
-## Project requirements
-
-- For this project, you will be building your own implementations of a set of regression methods without the use of existing regression functions in R. The goal of this project is to gain a deep understanding of how regression models work under the hood. 
-
-- You will complete a write up briefly describing the assumptions and uses of each regression model, explaining when one model is preferable to others  and demonstrating that your implementation produces identical results to the 4 columns of summary output from the standard R functions. 
-
-
-## Goals of the Project: 
-- To implement our own functions for regression without using in-built regression packages in R. We will estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models
-- To highlight and check the assumptions of each model
-- To discuss the implications of breaking assumptions for the models
-- To discuss the applications of the models and compare and contrast situations where certain models may perform better than others
-
-
-## Linear regression
-
+1.  When would you use the regression model you chose? When is it preferable to use and when not?
+2.  Estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models - show we get similar output as R gives us
+3.  How does it work?
+4.  Check the assumptions of each model - probably see residuals?
+5.  Discuss the implications of breaking assumptions for the models
+6.  What are the applications of the model?
+7.  Discuss obstacles we are going through/went through + how we plan to/how we did solve them
 
 ## Probit regression
 
+#### 1. When is it used?
+
+-   When the outcome is binary - thus, it is mainly used for classification problems
+
+-   When the outcome is categorical with more than 2 categories, we use the multinomial probit regression
+
+-   Since we know that logistic regression is also helpful in predicting binary outcomes, what is the difference between the two?
+
+#### Logit v/s Probit
+
+-   They give almost identical results - they just have different link functions (more on this later)
+
+$$
+\text{If z is the latent variable that we do not oberve, then,}\\
+\text{Logit has the link function:}\\
+z = log(p/(1-p))\\
+\text{Probit has the link function:}\\
+z = \phi^{-1}(p) \text{ where } \phi \text{ the cumulative normal probability density function}
+$$
+
+-   The decision to chose one over the other is discipline-dependent, and it is said that logit is better when you have extreme independent variables (where one particular small or large value will overwhelmingly determine if your outcome is 0 or 1 - overriding the effect of most other variables)
+
+-   There is no 'right' answer to this debate
+
+#### 2. Our Implementation
+
+A snippet of the main parts of the implementation:
+
+```{r}
+source("./probit.R")
+```
+
+1.  Define the predictor variables
+2.  Define the outcome variable
+3.  Define the log likelihood function - this will help estimate our betas (regression coefficients)
+4.  Define an initial guess to update later in order to maximize the log likelihood
+5.  Iterate over the guesses using optim to find the parameter which maximizes the log likelihood
+
+```{r, echo=T, eval=F}
+probit_regression <- function(data, x1, x2, ..., y) {
+  # predictors
+  X <-
+    matrix(c(rep(1, n), x_parameters),
+           nrow = n,
+           ncol = ncol(data))
+  # outcome
+  Y <- matrix(y, nrow = n, ncol = 1)
+  # defining log likelhood function (-ve)
+  probit.loglikelihood <- function(beta, X, Y) {
+    eta <- X %*% beta
+    p <- pnorm(eta)
+    loglikelihood <- -sum((1 - Y) * log(1 - p) + Y * log(p))
+    return(loglikelihood)
+  }
+  # define an initial guess
+  initial_guess <- matrix(0, nrow = ncol(data), ncol = 1)
+  # iterate to find the maximum log likelihood
+  result <-
+    optim(
+      initial_guess,
+      probit.loglikelihood,
+      X = X,
+      Y = Y,
+      method = 'BFGS'
+    )
+}
+```
 
 ## Negative Binomial regression
-
 
 ## Logistic regression
 
 ```{r}
 source("./logistic.R")
 ```
-
 
 ```{r echo=T}
 optim_logistic <- function(beta, X, Y) {
@@ -64,7 +120,7 @@ optim_logistic <- function(beta, X, Y) {
 }
 ```
 
----
+------------------------------------------------------------------------
 
 ```{r echo=T}
 sim_data <- data.frame(
@@ -106,8 +162,7 @@ summary(fit_Donner)$coef
 logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
 ```
 
-
 ## Poisson regression
 
-
 ## Zero-inflated Poisson regression
+
