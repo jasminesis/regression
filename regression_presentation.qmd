@@ -17,7 +17,7 @@ Fall 2023
 
 Statistical Consulting Research Seminar
 
-## Our implementations of the Probit and Zero/Poisson Regression Models
+# Probit and Zero/Poisson Regression Models
 
 ## Guiding Question:
 
@@ -25,17 +25,17 @@ Does building your regression function help you gain a deep understanding of how
 
 ## Goals of the Project:
 
-1.  When would you use the regression model you chose? When is it preferable to use and when not?
-2.  Estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models - show we get similar output as R gives us
-3.  How does it work?
-4.  Check the assumptions of each model - probably see residuals?
-5.  Discuss the implications of breaking assumptions for the models
-6.  What are the applications of the model?
-7.  Discuss obstacles we are going through/went through + how we plan to/how we did solve them
+-   When would you use the regression model you chose? When is it preferable to use and when not?
+-   Estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models - show we get similar output as R gives us
+-   How does it work?
+-   Check the assumptions of each model - probably see residuals?
+-   Discuss the implications of breaking assumptions for the models
+-   What are the applications of the model?
+-   Discuss obstacles we are going through/went through + how we plan to/how we did solve them
 
-## Probit regression
+# Probit Regression
 
-#### 1. When is it used?
+## When is it used?
 
 -   When the outcome is binary - thus, it is mainly used for classification problems
 
@@ -43,35 +43,41 @@ Does building your regression function help you gain a deep understanding of how
 
 -   Since we know that logistic regression is also helpful in predicting binary outcomes, what is the difference between the two?
 
-#### Logit v/s Probit
+## Logit v/s Probit
 
 -   They give almost identical results - they just have different link functions (more on this later)
 
-$$
-\text{If z is the latent variable that we do not oberve, then,}\\
-\text{Logit has the link function:}\\
-z = log(p/(1-p))\\
-\text{Probit has the link function:}\\
-z = \phi^{-1}(p) \text{ where } \phi \text{ the cumulative normal probability density function}
-$$
+-   If z has the latent variable that we do not observe, then,
+
+    Logit has the link function:
+
+    $$
+    z = log(p/(1-p))
+    $$
+
+    Probit has the link function:
+
+    $$
+    z = \phi^{-1}(p) 
+    \text{ where } \phi \text{ is the cumulative}\\
+    \text{normal probability density function}
+    $$
+
+## Logit v/s Probit
 
 -   The decision to chose one over the other is discipline-dependent, and it is said that logit is better when you have extreme independent variables (where one particular small or large value will overwhelmingly determine if your outcome is 0 or 1 - overriding the effect of most other variables)
 
 -   There is no 'right' answer to this debate
 
-#### 2. Our Implementation
-
-A snippet of the main parts of the implementation:
-
-```{r}
-source("./probit.R")
-```
+## Our Implementation
 
 1.  Define the predictor variables
 2.  Define the outcome variable
 3.  Define the log likelihood function - this will help estimate our betas (regression coefficients)
 4.  Define an initial guess to update later in order to maximize the log likelihood
 5.  Iterate over the guesses using optim to find the parameter which maximizes the log likelihood
+
+## Our Implementation
 
 ```{r, echo=T, eval=F}
 probit_regression <- function(data, x1, x2, ..., y) {
@@ -102,6 +108,114 @@ probit_regression <- function(data, x1, x2, ..., y) {
     )
 }
 ```
+
+## We get similar values as R
+
+Our output:
+
+```{r, echo=F}
+source('./probit.R')
+```
+
+```{r, echo=F}
+# applying created function to test output
+probit_regression(
+  test_probit_regression_data,
+  x1 = test_probit_regression_data$x1,
+  x2 = test_probit_regression_data$x2,
+  x3 = test_probit_regression_data$x3,
+  y = test_probit_regression_data$y
+)
+```
+
+R's output:
+
+```{r, echo=F}
+# comparing results to glm probit output
+summary(glm(y ~ x1 + x2 + x3,
+    data = test_probit_regression_data,
+    family = binomial(link = 'probit')))$coef
+```
+
+## How does it work?
+
+-   In linear regression, we tried to minimize the sum of least squares
+
+-   In probit regression, we use Maximum Likelihood Estimation to get at the best estimate of our betas (regression coefficients)
+
+## Maximum Likelihood Reminder
+
+-   MLE helps us determine which parameter (beta) was our data most likely to come from
+
+-   It tries to maximize the likelihood of seeing our data given various curves (parameter values)
+
+```{r, echo=F, eval=T}
+x0 <- seq(-3, 3, length.out = 20)
+x1 <- seq(-3, 3, length.out = 20) + 0.3
+y <- pnorm(x0)
+plot(x0, y, type = 'l', col = 'green', ylim = c(0, 1.2),
+     cex.main = 0.7, ylab = 'y', xlab = 'x')
+lines(x1, y, col = 'red')
+points(x0, y + 0.05, type = 'p', col = 'blue')
+```
+
+## We used 'optim' to maximize our log likelihood function
+
+-   Optim is a function in R which takes in a parameter to optimize and the function whose minimum/maximum needs to be found
+
+-   There are many ways that optim can optimize the parameter value. We used a method called 'BFGS' (Broyden Fletcher Goldfarb Shanno)
+
+## We used 'optim' to maximize our log likelihood function
+
+-   BFGS works like this:
+
+    -   it begins with an initial guess of the parameter value
+
+    -   this guess updates after every iteration of calculating the gradient of the log likelihood function
+
+    -   the updation stops when further iterations don't further maximize the log likelihood
+
+## What exactly is the latent variable?
+
+-   Our latent variable is z (we do not observe it)
+
+$$
+z = \beta_0 + \beta_1x_1 + ... + \beta_nx_n + \epsilon
+$$
+
+-   We want to somehow link z to the probability of our ACTUALLY OBSERVED outcome (Y) being 1. We do this using the link function phi
+
+$$
+P(Y = 1) = \phi(z)
+$$
+
+## What exactly is the latent variable?
+
+-   Now, to find z, we take the inverse of phi on both sides
+
+$$
+\phi^{-1}(P(Y = 1)) = z
+$$
+
+-   Phi inverse thus helps us transform a probability to the latent variable z
+
+```{r, echo=F, eval=T}
+z_values <- seq(-3, 3, length.out = 100)
+cumulative_probs <- pnorm(z_values)
+plot(z_values, cumulative_probs, type = "l", 
+     xlab = "Latent Variable (z)", ylab = "Cumulative Probability", 
+     main = "Relationship between z and Cumulative Probabilities")
+```
+
+## What exactly is the latent variable?
+
+-   We can rewrite our model in the following way:
+
+$$
+\phi^{-1}(P(Y = 1)) = \beta_0 + \beta_1x_1 + ... + \beta_nx_n + \epsilon
+$$
+
+-   Thus, when we estimate our betas using Maximum Likelihood, we interpret them as being a change in the z score of the outcome. We then transform this z score to a probability using the z-table
 
 ## Negative Binomial regression
 
@@ -165,4 +279,3 @@ logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
 ## Poisson regression
 
 ## Zero-inflated Poisson regression
-
