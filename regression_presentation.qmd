@@ -257,81 +257,65 @@ ggplot(my_data, aes(x = gpa, y = admit)) +
 -   Fitting the model
 
 ```{r}
-fit_probit <- glm(admit ~ gpa, data = my_data,
+fit_probit_correct <- glm(admit ~ gpa + gre, data = my_data,
                  family = binomial(link = 'probit'))
-summary(fit_probit)$coef
+summary(fit_probit_correct)$coef
 ```
 
 -   Interpreting the coefficient of gpa: Comparing 2 groups of people, one who got admitted and one who did not, the average gpa of those who did get admitted is around 0.63 z-scores higher than the group which did not
 
-## AUC using the correct model
-
-```{r}
-train_indices <- sample(x = nrow(my_data), size = 320, replace = F)
-test_indices <- c(1:400)[-train_indices]
-train_probit <- my_data[train_indices,]
-test_probit <- my_data[test_indices,]
-predicted_probit_correct <- predict(fit_probit, test_probit, type='response')
-pred_probit_correct  <- prediction(predicted_probit_correct, test_probit$admit)
-perf_probit_correct <- performance(pred_probit_correct,"auc")
-auc_probit_correct <- as.numeric(perf_probit_correct@y.values)
-auc_probit_correct
-```
-
-## AUC using the wrong model (breaking the linearity assumption)
+## The correct model: Linearity Assumption
 
 -   Checking if the z-score of the outcome and predictor have a linear relationship
 
 ```{r}
-my_data <- my_data %>% mutate(gpa_wrong = gpa^2)
-fit_probit_wrong <- glm(admit ~ gpa_wrong, data = my_data,
-                 family = binomial(link = 'probit'))
-train_indices <- sample(x = nrow(my_data), size = 320, replace = F)
-test_indices <- c(1:400)[-train_indices]
-train_probit <- my_data[train_indices,]
-test_probit <- my_data[test_indices,]
-predicted_probit_incorrect <- predict(fit_probit_wrong, test_probit, type='response')
-pred_probit_incorrect  <- prediction(predicted_probit_incorrect, test_probit$admit)
-perf_probit_incorrect <- performance(pred_probit_incorrect,"auc")
-auc_probit_incorrect <- as.numeric(perf_probit_incorrect@y.values)
-auc_probit_incorrect
-
-
-
-```
-
-```{r}
-
-```
-
-```{# originally, the relationship looked linear}
-ggplot(my_data, aes(x = gpa, y = my_data$admit)) +
-      geom_point() +
-      geom_smooth(method = "loess", se = FALSE) +
-      theme_classic()
-
-my_data$probabilities <- fit_probit$fitted.values
+my_data$probabilities_correct <- fit_probit_correct$fitted.values
 my_data <- my_data %>%
-    mutate(probit = qnorm(probabilities))
-ggplot(my_data, aes(y = probit, x = gpa))+
+    mutate(probit_correct = qnorm(probabilities_correct))
+ggplot(my_data, aes(y = probit_correct, x = gpa))+
     geom_point(size = 0.5, alpha = 0.5) +
     geom_smooth(method = 'loess') +
     theme_bw()
 ```
 
-```{r}
+## The correct model: AUC
 
+```{r}
+train_indices <- sample(x = nrow(my_data), size = 320, replace = F)
+test_indices <- c(1:400)[-train_indices]
+train_probit <- my_data[train_indices,]
+test_probit <- my_data[test_indices,]
+predicted_probit_correct <- predict(fit_probit_correct, test_probit, type='response')
+pred_probit_correct  <- prediction(predicted_probit_correct, test_probit$admit)
+perf_probit_correct <- performance(pred_probit_correct,'auc')
+auc_probit_correct <- as.numeric(perf_probit_correct@y.values)
+auc_probit_correct
 ```
 
-## Trying to break the linearity assumption
+## The incorrect model: Linearity Assumption
+
+-   Breaking the assumption that the z-score of the outcome and the predictor/s have a linear relationship
 
 ```{r}
-
-
+my_data$probit_incorrect <- my_data$probit_correct + my_data$gpa^4
+ggplot(my_data, aes(y = probit_incorrect, x = gpa))+
+    geom_point(size = 0.5, alpha = 0.5) +
+    geom_smooth(method = "loess") +
+    theme_bw() 
 ```
 
-```{r}
+## The incorrect model: AUC
 
+```{r}
+# defining new 'admit' values depending on how we manipulated the probit values to induce a non-linear association between z-score of the outcome and predictor
+my_data$admit_wrong <- ifelse(pnorm(my_data$probit_incorrect) < 0.5, 0, 1)
+fit_probit_incorrect <- glm(admit_wrong ~ gpa + gre, data = my_data,
+                 family = binomial(link = 'probit'))
+predicted_probit_incorrect <- predict(fit_probit_incorrect, test_probit, type='response')
+pred_probit_incorrect  <- prediction(predicted_probit_incorrect, test_probit$admit)
+perf_probit_incorrect <- performance(pred_probit_incorrect,'auc')
+auc_probit_incorrect <- as.numeric(perf_probit_incorrect@y.values)
+auc_probit_incorrect
 ```
 
 ## Negative Binomial regression
@@ -396,4 +380,3 @@ logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
 ## Poisson regression
 
 ## Zero-inflated Poisson regression
-
