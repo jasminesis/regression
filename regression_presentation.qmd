@@ -36,6 +36,8 @@ Statistical Consulting Research Seminar
 
 -   They give almost identical results - they just have different link functions (more on this later)
 
+## Logit v/s Probit
+
 -   If z is the latent variable that we do not observe and p is the probability of Y being 1, then,
 
     Logit has the link function:
@@ -244,11 +246,11 @@ summary(fit_probit_correct)$coef
 ```
 :::
 
--   Interpreting the coefficient of gpa: Comparing 2 groups of people, one who got admitted and one who did not, the average gpa of those who did get admitted is around 0.63 z-scores higher than the group which did not
+-   Interpreting the coefficient of gpa: Comparing 2 groups of people, one who got admitted and one who did not, the average gpa of those who did get admitted is around 0.45 z-scores higher than the group which did not
 
 ## The correct model: Linearity Assumption
 
--   Checking if the z-score of the outcome and predictor have a linear relationship ::: {.fragment}
+-   Checking if the z-score of the outcome and predictor have a linear relationship
 
 ```{r}
 my_data$probabilities_correct <- fit_probit_correct$fitted.values
@@ -278,7 +280,7 @@ auc_probit_correct
 
 ## The incorrect model: Linearity Assumption
 
--   Breaking the assumption that the z-score of the outcome and the predictor/s have a linear relationship ::: {.fragment}
+-   Breaking the assumption that the z-score of the outcome and the predictor/s have a linear relationship
 
 ```{r}
 my_data$probit_incorrect <- my_data$probit_correct + my_data$gpa^4
@@ -321,13 +323,13 @@ optim_logistic <- function(beta, X, Y) {
 }
 ```
 
+```{=tex}
 \begin{align*}
 \pi &= X_i\beta\\
 \ell(\beta_0, \beta) &= \prod^{n}_{i=1}\pi^{y_i}(1-\pi)^{1-y_i}\\
 &=\sum^{n}_{i=1} y_i \cdot log(\pi) + (1-y_i) * log(1-\pi)
 \end{align*}
-
-
+```
 ## Simulate some data
 
 ```{r echo=T}
@@ -408,7 +410,7 @@ logistic_function <- function(fn_formula, data) {
 }
 ```
 
-- supply the formula `logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)`
+-   supply the formula `logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)`
 
 ## How it works for categorical variables
 
@@ -441,10 +443,9 @@ logistic_function <- function(fn_formula, data) {
 }
 ```
 
-::: {.nonincremental}
-- creates dummy column for every non-numeric variable (i.e. 1 if sexMale, 0 if not male)
+::: nonincremental
+-   creates dummy column for every non-numeric variable (i.e. 1 if sexMale, 0 if not male)
 :::
-
 
 ## Guiding Question:
 
