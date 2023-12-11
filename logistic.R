@@ -13,6 +13,7 @@ logistic_function <- function(fn_formula, data) {
   Y <- matrix(data[, y_name], nrow = n, ncol = 1)
   X <- matrix(cbind(rep(1, n)))
 
+  # take in categorical data
   var_names <- vector("character")
   for (i in x_name) {
     if (suppressWarnings(all(!is.na(as.numeric(as.character(data[, i])))))) {
@@ -34,7 +35,8 @@ logistic_function <- function(fn_formula, data) {
     loglikelihood <- -sum(Y * log(pi) + (1 - Y) * log(1 - pi))
     return(loglikelihood)
   }
-  result <- optim(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y, hessian = T)
+  # result <- optimx(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y, control=list(trace=0, all.methods=T))
+  result <- optim(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y, hessian=T)
   OI <- solve(result$hessian)
   se <- sqrt(diag(OI))
 
@@ -56,3 +58,7 @@ Donner$survived <- Donner$y == "survived"
 fit_Donner <- glm(survived ~ age + sex + status, data = Donner, family = "binomial")
 summary(fit_Donner)$coef
 logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
+
+# View(model.matrix(fit_Donner))
+# View(X)
+
