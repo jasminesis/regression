@@ -41,6 +41,7 @@ Statistical Consulting Research Seminar
 
 -   They give almost identical results - they just have different link functions (more on this later)
 
+
 ## Logit v/s Probit
 
 -   If z is the latent variable that we do not observe and p is the probability of Y being 1, then,
@@ -63,13 +64,7 @@ Statistical Consulting Research Seminar
 
 -   There is no 'right' answer to this debate
 
-## Using the `optim` function
 
-1.  Define the predictor variables
-2.  Define the outcome variable
-3.  Define the log likelihood function - this will help estimate our betas (regression coefficients)
-4.  Define an initial guess to update later in order to maximize the log likelihood
-5.  Iterate over the guesses using `optim` to find the parameter which maximizes the log likelihood of seeing the data inputted
 
 ## We used 'optim' to maximize our log likelihood function
 
@@ -77,9 +72,20 @@ Statistical Consulting Research Seminar
 
 -   Optim is a function in R which takes in a parameter to optimize and the function whose minimum/maximum needs to be found
 
--   There are many ways that optim can optimize the parameter value. We used a method called 'BFGS' (Broyden Fletcher Goldfarb Shanno)
 
-## We used 'optim' to maximize our log likelihood function
+## Using the `optim` function
+
+::: {.nonincremental}
+1.  Define the predictor variables
+2.  Define the outcome variable
+3.  Define the log likelihood function - this will help estimate our betas (regression coefficients)
+4.  Define an initial guess to update later in order to maximize the log likelihood
+5.  Iterate over the guesses using `optim` to find the parameter which maximizes the log likelihood of seeing the data inputted
+:::
+
+## Using the `optim` function
+
+-   There are many ways that optim can optimize the parameter value. We used a method called 'BFGS' (Broyden Fletcher Goldfarb Shanno)
 
 -   BFGS works like this:
 
@@ -88,7 +94,6 @@ Statistical Consulting Research Seminar
     -   this guess updates after every iteration of calculating the gradient of the log likelihood function
 
     -   the updates stop when further iterations no longer further maximize the log likelihood
-
 
 
 ## Logistic regression assumptions
