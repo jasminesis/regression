@@ -407,27 +407,11 @@ Saumya Seth, Jasmine Siswandjo
 <p>Statistical Consulting Research Seminar</p>
 </section>
 
-<section>
 <section id="probit-and-zeropoisson-regression-models" class="title-slide slide level1 center">
 <h1>Probit and Zero/Poisson Regression Models</h1>
 
 </section>
-<section id="guiding-question" class="slide level2">
-<h2>Guiding Question:</h2>
-<p>Does building your regression function help you gain a deep understanding of how regression models work under the hood?</p>
-</section>
-<section id="goals-of-the-project" class="slide level2">
-<h2>Goals of the Project:</h2>
-<ul>
-<li class="fragment">When would you use the regression model you chose? When is it preferable to use and when not?</li>
-<li class="fragment">Estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models - show we get similar output as R gives us</li>
-<li class="fragment">How does it work?</li>
-<li class="fragment">Check the assumptions of each model - probably see residuals?</li>
-<li class="fragment">Discuss the implications of breaking assumptions for the models</li>
-<li class="fragment">What are the applications of the model?</li>
-<li class="fragment">Discuss obstacles we are going through/went through + how we plan to/how we did solve them</li>
-</ul>
-</section></section>
+
 <section>
 <section id="probit-regression" class="title-slide slide level1 center">
 <h1>Probit Regression</h1>
@@ -479,53 +463,48 @@ z = \phi^{-1}(p)
 <h2>Our Implementation</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>probit_regression <span class="ot">&lt;-</span> <span class="cf">function</span>(data, x1, x2, ..., y) {</span>
-<span id="cb1-2"><a href="#cb1-2"></a>  <span class="co"># predictors</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>  <span class="co"># defining predictor variables</span></span>
 <span id="cb1-3"><a href="#cb1-3"></a>  X <span class="ot">&lt;-</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a>    <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, n), x_parameters),</span>
-<span id="cb1-5"><a href="#cb1-5"></a>           <span class="at">nrow =</span> n,</span>
-<span id="cb1-6"><a href="#cb1-6"></a>           <span class="at">ncol =</span> <span class="fu">ncol</span>(data))</span>
-<span id="cb1-7"><a href="#cb1-7"></a>  <span class="co"># outcome</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>      <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, n), x_parameters),</span>
+<span id="cb1-5"><a href="#cb1-5"></a>             <span class="at">nrow =</span> n,</span>
+<span id="cb1-6"><a href="#cb1-6"></a>             <span class="at">ncol =</span> <span class="fu">ncol</span>(data))</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  <span class="co"># defining outcome variable</span></span>
 <span id="cb1-8"><a href="#cb1-8"></a>  Y <span class="ot">&lt;-</span> <span class="fu">matrix</span>(y, <span class="at">nrow =</span> n, <span class="at">ncol =</span> <span class="dv">1</span>)</span>
-<span id="cb1-9"><a href="#cb1-9"></a>  <span class="co"># defining log likelhood function (-ve)</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>    <span class="co"># defining the log likelihood function</span></span>
 <span id="cb1-10"><a href="#cb1-10"></a>  probit.loglikelihood <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, X, Y) {</span>
-<span id="cb1-11"><a href="#cb1-11"></a>    eta <span class="ot">&lt;-</span> X <span class="sc">%*%</span> beta</span>
-<span id="cb1-12"><a href="#cb1-12"></a>    p <span class="ot">&lt;-</span> <span class="fu">pnorm</span>(eta)</span>
-<span id="cb1-13"><a href="#cb1-13"></a>    loglikelihood <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fu">sum</span>((<span class="dv">1</span> <span class="sc">-</span> Y) <span class="sc">*</span> <span class="fu">log</span>(<span class="dv">1</span> <span class="sc">-</span> p) <span class="sc">+</span> Y <span class="sc">*</span> <span class="fu">log</span>(p))</span>
-<span id="cb1-14"><a href="#cb1-14"></a>    <span class="fu">return</span>(loglikelihood)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>      eta <span class="ot">&lt;-</span> X <span class="sc">%*%</span> beta</span>
+<span id="cb1-12"><a href="#cb1-12"></a>      p <span class="ot">&lt;-</span> <span class="fu">pnorm</span>(eta)</span>
+<span id="cb1-13"><a href="#cb1-13"></a>      loglikelihood <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fu">sum</span>((<span class="dv">1</span> <span class="sc">-</span> Y) <span class="sc">*</span> <span class="fu">log</span>(<span class="dv">1</span> <span class="sc">-</span> p) <span class="sc">+</span> Y <span class="sc">*</span> <span class="fu">log</span>(p))</span>
+<span id="cb1-14"><a href="#cb1-14"></a>      <span class="fu">return</span>(loglikelihood)</span>
 <span id="cb1-15"><a href="#cb1-15"></a>  }</span>
-<span id="cb1-16"><a href="#cb1-16"></a>  <span class="co"># define an initial guess</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a>  initial_guess <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> <span class="fu">ncol</span>(data), <span class="at">ncol =</span> <span class="dv">1</span>)</span>
-<span id="cb1-18"><a href="#cb1-18"></a>  <span class="co"># iterate to find the maximum log likelihood</span></span>
-<span id="cb1-19"><a href="#cb1-19"></a>  result <span class="ot">&lt;-</span></span>
-<span id="cb1-20"><a href="#cb1-20"></a>    <span class="fu">optim</span>(</span>
-<span id="cb1-21"><a href="#cb1-21"></a>      initial_guess,</span>
-<span id="cb1-22"><a href="#cb1-22"></a>      probit.loglikelihood,</span>
-<span id="cb1-23"><a href="#cb1-23"></a>      <span class="at">X =</span> X,</span>
-<span id="cb1-24"><a href="#cb1-24"></a>      <span class="at">Y =</span> Y,</span>
-<span id="cb1-25"><a href="#cb1-25"></a>      <span class="at">method =</span> <span class="st">'BFGS'</span></span>
-<span id="cb1-26"><a href="#cb1-26"></a>    )</span>
+<span id="cb1-16"><a href="#cb1-16"></a>  <span class="co"># defining an initial guess</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a>    initial_guess <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> <span class="fu">ncol</span>(data), <span class="at">ncol =</span> <span class="dv">1</span>)</span>
+<span id="cb1-18"><a href="#cb1-18"></a>    <span class="co"># optimizing by updating the guesses</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a>    result <span class="ot">&lt;-</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a>      <span class="fu">optim</span>(</span>
+<span id="cb1-21"><a href="#cb1-21"></a>        initial_guess,</span>
+<span id="cb1-22"><a href="#cb1-22"></a>        probit.loglikelihood,</span>
+<span id="cb1-23"><a href="#cb1-23"></a>        <span class="at">X =</span> X,</span>
+<span id="cb1-24"><a href="#cb1-24"></a>        <span class="at">Y =</span> Y,</span>
+<span id="cb1-25"><a href="#cb1-25"></a>        <span class="at">method =</span> <span class="st">'BFGS'</span></span>
+<span id="cb1-26"><a href="#cb1-26"></a>      )</span>
 <span id="cb1-27"><a href="#cb1-27"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="we-get-similar-values-as-r" class="slide level2">
 <h2>We get similar values as R</h2>
-<p>Our output:</p>
 <div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="fu">source</span>(<span class="st">'./probit.R'</span>)</span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="co"># our output</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>our_implementation_probit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>The intercept of the regression is -0.8336269 
-The coefficient of x1 is -0.1370165 
-The coefficient of x2 is -1.962469 
-The coefficient of x3 is -0.6191959</code></pre>
+<pre><code>[1]  0.896974008  0.002762927 -0.290912284 -0.118860038</code></pre>
 </div>
-</div>
-<p>R’s output:</p>
-<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co"># r's output</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>r_implementation_probit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                 Estimate Std. Error       z value  Pr(&gt;|z|)
-(Intercept) -6.991223e+00  33719.825 -2.073327e-04 0.9998346
-x1          -4.978637e-16   4111.509 -1.210903e-19 1.0000000
-x2          -1.661498e-15   7700.929 -2.157529e-19 1.0000000
-x3           1.867861e-15   2632.053  7.096592e-19 1.0000000</code></pre>
+<pre><code> (Intercept)           x1           x2           x3 
+ 0.896933003  0.002761197 -0.290902950 -0.118859180 </code></pre>
 </div>
 </div>
 <ul>
@@ -546,11 +525,11 @@ x3           1.867861e-15   2632.053  7.096592e-19 1.0000000</code></pre>
 <li class="fragment"><p>It tries to maximize the likelihood of seeing our data given various curves (parameter values)</p></li>
 </ul>
 
-<img data-src="regression_presentation_files/figure-revealjs/unnamed-chunk-6-1.png" width="960" class="r-stretch"></section>
+<img data-src="regression_presentation_files/figure-revealjs/unnamed-chunk-4-1.png" width="960" class="r-stretch"></section>
 <section id="we-used-optim-to-maximize-our-log-likelihood-function" class="slide level2">
 <h2>We used ‘optim’ to maximize our log likelihood function</h2>
 <ul>
-<li class="fragment"><p>We were a bit unsure of which method of optimization to use. We decided to use optim as it proved to be user-friendly for us</p></li>
+<li class="fragment"><p>We were a bit unsure about which method of optimization to use. We decided to use optim as it proved to be user-friendly for us</p></li>
 <li class="fragment"><p>Optim is a function in R which takes in a parameter to optimize and the function whose minimum/maximum needs to be found</p></li>
 <li class="fragment"><p>There are many ways that optim can optimize the parameter value. We used a method called ‘BFGS’ (Broyden Fletcher Goldfarb Shanno)</p></li>
 </ul>
@@ -593,7 +572,7 @@ P(Y = 1) = \phi(z)
 <li class="fragment">Phi inverse thus helps us transform a probability to the latent variable z</li>
 </ul>
 
-<img data-src="regression_presentation_files/figure-revealjs/unnamed-chunk-7-1.png" width="960" class="r-stretch"></section>
+<img data-src="regression_presentation_files/figure-revealjs/unnamed-chunk-5-1.png" width="960" class="r-stretch"></section>
 <section id="what-exactly-is-the-latent-variable-1" class="slide level2">
 <h2>What exactly is the latent variable?</h2>
 <ul>
@@ -635,7 +614,7 @@ P(Y = 1) = \phi(z)
 <section id="an-example-analysis-1" class="slide level2">
 <h2>An example analysis</h2>
 
-<img data-src="regression_presentation_files/figure-revealjs/unnamed-chunk-9-1.png" width="960" class="r-stretch"></section>
+<img data-src="regression_presentation_files/figure-revealjs/unnamed-chunk-7-1.png" width="960" class="r-stretch"></section>
 <section id="an-example-analysis-2" class="slide level2">
 <h2>An example analysis</h2>
 <ul>
@@ -643,38 +622,63 @@ P(Y = 1) = \phi(z)
 </ul>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>              Estimate Std. Error   z value     Pr(&gt;|z|)
-(Intercept) -2.6194854  0.6130656 -4.272765 1.930637e-05
-gpa          0.6286866  0.1780564  3.530827 4.142619e-04</code></pre>
+<pre><code>                Estimate   Std. Error   z value     Pr(&gt;|z|)
+(Intercept) -3.003535745 0.6339726838 -4.737642 2.162191e-06
+gpa          0.454574799 0.1915197540  2.373514 1.761973e-02
+gre          0.001642537 0.0006333339  2.593477 9.501089e-03</code></pre>
 </div>
 </div>
 <ul>
 <li class="fragment">Interpreting the coefficient of gpa: Comparing 2 groups of people, one who got admitted and one who did not, the average gpa of those who did get admitted is around 0.63 z-scores higher than the group which did not</li>
 </ul>
 </section>
-<section id="auc-using-the-correct-model" class="slide level2">
-<h2>AUC using the correct model</h2>
-</section>
-<section id="auc-using-the-wrong-model-breaking-the-linearity-assumption" class="slide level2">
-<h2>AUC using the wrong model (breaking the linearity assumption)</h2>
+<section id="the-correct-model-linearity-assumption" class="slide level2">
+<h2>The correct model: Linearity Assumption</h2>
 <ul>
 <li class="fragment">Checking if the z-score of the outcome and predictor have a linear relationship</li>
 </ul>
-<div class="sourceCode" id="cb6"><pre class="sourceCode numberSource {# originally, the relationship looked linear} number-lines code-with-copy"><code class="sourceCode"><span id="cb6-1"><a href="#cb6-1"></a>ggplot(my_data, aes(x = gpa, y = my_data$admit)) +</span>
-<span id="cb6-2"><a href="#cb6-2"></a>      geom_point() +</span>
-<span id="cb6-3"><a href="#cb6-3"></a>      geom_smooth(method = "loess", se = FALSE) +</span>
-<span id="cb6-4"><a href="#cb6-4"></a>      theme_classic()</span>
-<span id="cb6-5"><a href="#cb6-5"></a></span>
-<span id="cb6-6"><a href="#cb6-6"></a>my_data$probabilities &lt;- fit_probit$fitted.values</span>
-<span id="cb6-7"><a href="#cb6-7"></a>my_data &lt;- my_data %&gt;%</span>
-<span id="cb6-8"><a href="#cb6-8"></a>    mutate(probit = qnorm(probabilities))</span>
-<span id="cb6-9"><a href="#cb6-9"></a>ggplot(my_data, aes(y = probit, x = gpa))+</span>
-<span id="cb6-10"><a href="#cb6-10"></a>    geom_point(size = 0.5, alpha = 0.5) +</span>
-<span id="cb6-11"><a href="#cb6-11"></a>    geom_smooth(method = 'loess') +</span>
-<span id="cb6-12"><a href="#cb6-12"></a>    theme_bw()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<img data-src="regression_presentation_files/figure-revealjs/unnamed-chunk-9-1.png" width="960" class="r-stretch"></section>
+<section id="the-correct-model-auc" class="slide level2">
+<h2>The correct model: AUC</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>train_indices <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="at">x =</span> <span class="fu">nrow</span>(my_data), <span class="at">size =</span> <span class="dv">320</span>, <span class="at">replace =</span> F)</span>
+<span id="cb8-2"><a href="#cb8-2"></a>test_indices <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">400</span>)[<span class="sc">-</span>train_indices]</span>
+<span id="cb8-3"><a href="#cb8-3"></a>train_probit <span class="ot">&lt;-</span> my_data[train_indices,]</span>
+<span id="cb8-4"><a href="#cb8-4"></a>test_probit <span class="ot">&lt;-</span> my_data[test_indices,]</span>
+<span id="cb8-5"><a href="#cb8-5"></a>predicted_probit_correct <span class="ot">&lt;-</span> <span class="fu">predict</span>(fit_probit_correct, test_probit, <span class="at">type=</span><span class="st">'response'</span>)</span>
+<span id="cb8-6"><a href="#cb8-6"></a>pred_probit_correct  <span class="ot">&lt;-</span> <span class="fu">prediction</span>(predicted_probit_correct, test_probit<span class="sc">$</span>admit)</span>
+<span id="cb8-7"><a href="#cb8-7"></a>perf_probit_correct <span class="ot">&lt;-</span> <span class="fu">performance</span>(pred_probit_correct,<span class="st">'auc'</span>)</span>
+<span id="cb8-8"><a href="#cb8-8"></a>auc_probit_correct <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(perf_probit_correct<span class="sc">@</span>y.values)</span>
+<span id="cb8-9"><a href="#cb8-9"></a>auc_probit_correct</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6755486</code></pre>
+</div>
+</div>
 </section>
-<section id="trying-to-break-the-linearity-assumption" class="slide level2">
-<h2>Trying to break the linearity assumption</h2>
+<section id="the-incorrect-model-linearity-assumption" class="slide level2">
+<h2>The incorrect model: Linearity Assumption</h2>
+<ul>
+<li class="fragment">Breaking the assumption that the z-score of the outcome and the predictor/s have a linear relationship</li>
+</ul>
+
+<img data-src="regression_presentation_files/figure-revealjs/unnamed-chunk-11-1.png" width="960" class="r-stretch"></section>
+<section id="the-incorrect-model-auc" class="slide level2">
+<h2>The incorrect model: AUC</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="co"># defining new 'admit' values depending on how we manipulated the probit values to induce a non-linear association between z-score of the outcome and predictor</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>my_data<span class="sc">$</span>admit_wrong <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">pnorm</span>(my_data<span class="sc">$</span>probit_incorrect) <span class="sc">&lt;</span> <span class="fl">0.5</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb10-3"><a href="#cb10-3"></a>fit_probit_incorrect <span class="ot">&lt;-</span> <span class="fu">glm</span>(admit_wrong <span class="sc">~</span> gpa <span class="sc">+</span> gre, <span class="at">data =</span> my_data,</span>
+<span id="cb10-4"><a href="#cb10-4"></a>                 <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">'probit'</span>))</span>
+<span id="cb10-5"><a href="#cb10-5"></a>predicted_probit_incorrect <span class="ot">&lt;-</span> <span class="fu">predict</span>(fit_probit_incorrect, test_probit, <span class="at">type=</span><span class="st">'response'</span>)</span>
+<span id="cb10-6"><a href="#cb10-6"></a>pred_probit_incorrect  <span class="ot">&lt;-</span> <span class="fu">prediction</span>(predicted_probit_incorrect, test_probit<span class="sc">$</span>admit)</span>
+<span id="cb10-7"><a href="#cb10-7"></a>perf_probit_incorrect <span class="ot">&lt;-</span> <span class="fu">performance</span>(pred_probit_incorrect,<span class="st">'auc'</span>)</span>
+<span id="cb10-8"><a href="#cb10-8"></a>auc_probit_incorrect <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(perf_probit_incorrect<span class="sc">@</span>y.values)</span>
+<span id="cb10-9"><a href="#cb10-9"></a>auc_probit_incorrect</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.5</code></pre>
+</div>
+</div>
 </section>
 <section id="negative-binomial-regression" class="slide level2">
 <h2>Negative Binomial regression</h2>
@@ -682,27 +686,27 @@ gpa          0.6286866  0.1780564  3.530827 4.142619e-04</code></pre>
 <section id="logistic-regression" class="slide level2">
 <h2>Logistic regression</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>optim_logistic <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, X, Y) {</span>
-<span id="cb7-2"><a href="#cb7-2"></a>  beta <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(beta, <span class="at">nrow =</span> <span class="dv">4</span>)</span>
-<span id="cb7-3"><a href="#cb7-3"></a>  pi <span class="ot">&lt;-</span> <span class="fu">plogis</span>(X <span class="sc">%*%</span> beta)</span>
-<span id="cb7-4"><a href="#cb7-4"></a>  loglikelihood <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fu">sum</span>(Y <span class="sc">*</span> <span class="fu">log</span>(pi) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">-</span> Y) <span class="sc">*</span> <span class="fu">log</span>(<span class="dv">1</span> <span class="sc">-</span> pi))</span>
-<span id="cb7-5"><a href="#cb7-5"></a>  <span class="fu">return</span>(loglikelihood)</span>
-<span id="cb7-6"><a href="#cb7-6"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>optim_logistic <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, X, Y) {</span>
+<span id="cb12-2"><a href="#cb12-2"></a>  beta <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(beta, <span class="at">nrow =</span> <span class="dv">4</span>)</span>
+<span id="cb12-3"><a href="#cb12-3"></a>  pi <span class="ot">&lt;-</span> <span class="fu">plogis</span>(X <span class="sc">%*%</span> beta)</span>
+<span id="cb12-4"><a href="#cb12-4"></a>  loglikelihood <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fu">sum</span>(Y <span class="sc">*</span> <span class="fu">log</span>(pi) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">-</span> Y) <span class="sc">*</span> <span class="fu">log</span>(<span class="dv">1</span> <span class="sc">-</span> pi))</span>
+<span id="cb12-5"><a href="#cb12-5"></a>  <span class="fu">return</span>(loglikelihood)</span>
+<span id="cb12-6"><a href="#cb12-6"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section class="slide level2">
 
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>sim_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb8-2"><a href="#cb8-2"></a>  <span class="at">x1 =</span> <span class="fu">rnorm</span>(<span class="dv">100</span>, <span class="dv">2</span>, <span class="dv">1</span>), </span>
-<span id="cb8-3"><a href="#cb8-3"></a>  <span class="at">x2 =</span> <span class="fu">rnorm</span>(<span class="dv">100</span>, <span class="dv">4</span>, <span class="dv">1</span>), </span>
-<span id="cb8-4"><a href="#cb8-4"></a>  <span class="at">x3 =</span> <span class="fu">rnorm</span>(<span class="dv">100</span>, <span class="dv">6</span>, <span class="dv">1</span>))</span>
-<span id="cb8-5"><a href="#cb8-5"></a></span>
-<span id="cb8-6"><a href="#cb8-6"></a>sim_data<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(</span>
-<span id="cb8-7"><a href="#cb8-7"></a>  <span class="dv">100</span>, </span>
-<span id="cb8-8"><a href="#cb8-8"></a>  <span class="at">size =</span> <span class="dv">1</span>, </span>
-<span id="cb8-9"><a href="#cb8-9"></a>  <span class="at">prob =</span> <span class="fu">plogis</span>(<span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> sim_data<span class="sc">$</span>x1 <span class="sc">+</span> sim_data<span class="sc">$</span>x2 <span class="sc">-</span> <span class="fl">0.5</span> <span class="sc">*</span> sim_data<span class="sc">$</span>x3)</span>
-<span id="cb8-10"><a href="#cb8-10"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a>sim_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb13-2"><a href="#cb13-2"></a>  <span class="at">x1 =</span> <span class="fu">rnorm</span>(<span class="dv">100</span>, <span class="dv">2</span>, <span class="dv">1</span>), </span>
+<span id="cb13-3"><a href="#cb13-3"></a>  <span class="at">x2 =</span> <span class="fu">rnorm</span>(<span class="dv">100</span>, <span class="dv">4</span>, <span class="dv">1</span>), </span>
+<span id="cb13-4"><a href="#cb13-4"></a>  <span class="at">x3 =</span> <span class="fu">rnorm</span>(<span class="dv">100</span>, <span class="dv">6</span>, <span class="dv">1</span>))</span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a>sim_data<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(</span>
+<span id="cb13-7"><a href="#cb13-7"></a>  <span class="dv">100</span>, </span>
+<span id="cb13-8"><a href="#cb13-8"></a>  <span class="at">size =</span> <span class="dv">1</span>, </span>
+<span id="cb13-9"><a href="#cb13-9"></a>  <span class="at">prob =</span> <span class="fu">plogis</span>(<span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> sim_data<span class="sc">$</span>x1 <span class="sc">+</span> sim_data<span class="sc">$</span>x2 <span class="sc">-</span> <span class="fl">0.5</span> <span class="sc">*</span> sim_data<span class="sc">$</span>x3)</span>
+<span id="cb13-10"><a href="#cb13-10"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="output-from-glm" class="slide level2">
@@ -728,7 +732,7 @@ Std. Error   2.2721484 0.3106271 0.4004095  0.3122851</code></pre>
 <section id="also-works-for-categorical-variables" class="slide level2">
 <h2>Also works for categorical variables</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a><span class="fu">summary</span>(fit_Donner)<span class="sc">$</span>coef</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="fu">summary</span>(fit_Donner)<span class="sc">$</span>coef</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                Estimate   Std. Error      z value    Pr(&gt;|z|)
 (Intercept)    1.4873491 4.926432e-01  3.019120666 0.002535095
@@ -737,7 +741,7 @@ sexMale       -0.7279889 5.172218e-01 -1.407498622 0.159279585
 statusHired   -0.5985928 6.281956e-01 -0.952876467 0.340652665
 statusSingle -17.4555740 1.765537e+03 -0.009886838 0.992111573</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="fu">logistic_function</span>(<span class="at">fn_formula =</span> <span class="st">"survived ~ age + sex + status"</span>, <span class="at">data =</span> Donner)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a><span class="fu">logistic_function</span>(<span class="at">fn_formula =</span> <span class="st">"survived ~ age + sex + status"</span>, <span class="at">data =</span> Donner)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>           (Intercept)         age    sexMale statusHired statusSingle
 Estimate     1.5039550 -0.02838637 -0.7485574  -0.5866585    -6.481174

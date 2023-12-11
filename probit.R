@@ -22,16 +22,10 @@ probit_regression <- function(data, x1, x2, ..., y) {
       Y = Y,
       method = 'BFGS'
     )
-  cat(
-    'The intercept of the regression is',
-    result$par[1],
-    '\nThe coefficient of x1 is',
+  c(result$par[1],
     result$par[2],
-    '\nThe coefficient of x2 is',
     result$par[3],
-    '\nThe coefficient of x3 is',
-    result$par[4]
-  )
+    result$par[4])
 }
 # test data frame for probit regression
 test_probit_regression_data <- data.frame(
@@ -40,15 +34,18 @@ test_probit_regression_data <- data.frame(
   x3 = rnorm(100, 5, 3),
   y = rbinom(5, size = 1, prob = 0.2)
 )
-# # applying created function to test data frame
-# probit_regression(
-#   test_probit_regression_data,
-#   x1 = test_probit_regression_data$x1,
-#   x2 = test_probit_regression_data$x2,
-#   x3 = test_probit_regression_data$x3,
-#   y = test_probit_regression_data$y
-# )
+# applying created function to test data frame
+our_implementation_probit <- probit_regression(
+  test_probit_regression_data,
+  x1 = test_probit_regression_data$x1,
+  x2 = test_probit_regression_data$x2,
+  x3 = test_probit_regression_data$x3,
+  y = test_probit_regression_data$y
+)[1:4]
 # comparing results to glm probit output
-glm(y ~ x1 + x2 + x3,
-    data = test_probit_regression_data,
-    family = binomial(link = "probit"))
+r_implementation_probit <- glm(y ~ x1 + x2 + x3,
+                               data = test_probit_regression_data,
+                               family = binomial(link = "probit"))$coefficients[1:4]
+
+our_implementation_probit
+r_implementation_probit

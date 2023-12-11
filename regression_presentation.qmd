@@ -12,7 +12,6 @@ library(alr4)
 library(pROC)
 library(ROCR)
 library(ggeffects)
-set.seed(123)
 ```
 
 # DIY Regression
@@ -22,20 +21,6 @@ Fall 2023
 Statistical Consulting Research Seminar
 
 # Probit and Zero/Poisson Regression Models
-
-## Guiding Question:
-
-Does building your regression function help you gain a deep understanding of how regression models work under the hood?
-
-## Goals of the Project:
-
--   When would you use the regression model you chose? When is it preferable to use and when not?
--   Estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models - show we get similar output as R gives us
--   How does it work?
--   Check the assumptions of each model - probably see residuals?
--   Discuss the implications of breaking assumptions for the models
--   What are the applications of the model?
--   Discuss obstacles we are going through/went through + how we plan to/how we did solve them
 
 # Probit Regression
 
@@ -85,60 +70,42 @@ Does building your regression function help you gain a deep understanding of how
 
 ```{r, echo=T, eval=F}
 probit_regression <- function(data, x1, x2, ..., y) {
-  # predictors
+  # defining predictor variables
   X <-
-    matrix(c(rep(1, n), x_parameters),
-           nrow = n,
-           ncol = ncol(data))
-  # outcome
+      matrix(c(rep(1, n), x_parameters),
+             nrow = n,
+             ncol = ncol(data))
+  # defining outcome variable
   Y <- matrix(y, nrow = n, ncol = 1)
-  # defining log likelhood function (-ve)
+    # defining the log likelihood function
   probit.loglikelihood <- function(beta, X, Y) {
-    eta <- X %*% beta
-    p <- pnorm(eta)
-    loglikelihood <- -sum((1 - Y) * log(1 - p) + Y * log(p))
-    return(loglikelihood)
+      eta <- X %*% beta
+      p <- pnorm(eta)
+      loglikelihood <- -sum((1 - Y) * log(1 - p) + Y * log(p))
+      return(loglikelihood)
   }
-  # define an initial guess
-  initial_guess <- matrix(0, nrow = ncol(data), ncol = 1)
-  # iterate to find the maximum log likelihood
-  result <-
-    optim(
-      initial_guess,
-      probit.loglikelihood,
-      X = X,
-      Y = Y,
-      method = 'BFGS'
-    )
+  # defining an initial guess
+    initial_guess <- matrix(0, nrow = ncol(data), ncol = 1)
+    # optimizing by updating the guesses
+    result <-
+      optim(
+        initial_guess,
+        probit.loglikelihood,
+        X = X,
+        Y = Y,
+        method = 'BFGS'
+      )
 }
 ```
 
 ## We get similar values as R
 
-Our output:
-
-```{r, echo=F}
+```{r, eval=T, echo=T}
 source('./probit.R')
-```
-
-```{r, echo=F}
-# applying created function to test output
-probit_regression(
-  test_probit_regression_data,
-  x1 = test_probit_regression_data$x1,
-  x2 = test_probit_regression_data$x2,
-  x3 = test_probit_regression_data$x3,
-  y = test_probit_regression_data$y
-)
-```
-
-R's output:
-
-```{r, echo=F}
-# comparing results to glm probit output
-summary(glm(y ~ x1 + x2 + x3,
-    data = test_probit_regression_data,
-    family = binomial(link = 'probit')))$coef
+# our output
+our_implementation_probit
+# r's output
+r_implementation_probit
 ```
 
 -   We are currently working on estimating the standard errors using bootstrapping
@@ -167,7 +134,7 @@ points(x0, y + 0.05, type = 'p', col = 'blue')
 
 ## We used 'optim' to maximize our log likelihood function
 
--   We were a bit unsure of which method of optimization to use. We decided to use optim as it proved to be user-friendly for us
+-   We were a bit unsure about which method of optimization to use. We decided to use optim as it proved to be user-friendly for us
 
 -   Optim is a function in R which takes in a parameter to optimize and the function whose minimum/maximum needs to be found
 
@@ -280,7 +247,7 @@ ggplot(my_data, aes(y = probit_correct, x = gpa))+
 
 ## The correct model: AUC
 
-```{r}
+```{r, echo=T, eval=T}
 train_indices <- sample(x = nrow(my_data), size = 320, replace = F)
 test_indices <- c(1:400)[-train_indices]
 train_probit <- my_data[train_indices,]
@@ -306,7 +273,7 @@ ggplot(my_data, aes(y = probit_incorrect, x = gpa))+
 
 ## The incorrect model: AUC
 
-```{r}
+```{r, echo=T, eval=T}
 # defining new 'admit' values depending on how we manipulated the probit values to induce a non-linear association between z-score of the outcome and predictor
 my_data$admit_wrong <- ifelse(pnorm(my_data$probit_incorrect) < 0.5, 0, 1)
 fit_probit_incorrect <- glm(admit_wrong ~ gpa + gre, data = my_data,
