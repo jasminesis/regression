@@ -40,9 +40,7 @@ Statistical Consulting Research Seminar
 
     Logit has the link function:
 
-    $$
-    z = log(p/(1-p))
-    $$
+    $$z = log(\frac{p}{1-p})$$
 
     Probit has the link function:
 
@@ -122,7 +120,7 @@ r_implementation_probit
 
 -   It tries to maximize the likelihood of seeing our data given various curves (parameter values)
 
-::: {.fragment}
+::: fragment
 ```{r, echo=F, eval=T, fig.height=3.5}
 x0 <- seq(-3, 3, length.out = 20)
 x1 <- seq(-3, 3, length.out = 20) + 0.3
@@ -156,7 +154,7 @@ points(x0, y + 0.05, type = 'p', col = 'blue')
 
 -   Our latent variable is z (we do not observe it):
 
-::: {.fragment}
+::: fragment
 $$
 z = \beta_0 + \beta_1x_1 + ... + \beta_nx_n + \epsilon
 $$
@@ -164,7 +162,7 @@ $$
 
 -   We want to somehow link z to the probability of our **ACTUALLY OBSERVED** outcome (Y) being 1. We do this using the link function phi
 
-::: {.fragment}
+::: fragment
 $$
 P(Y = 1) = \phi(z)
 $$
@@ -174,7 +172,7 @@ $$
 
 -   Now, to find z, we take the inverse of phi on both sides
 
-::: {.fragment}
+::: fragment
 $$
 \phi^{-1}(P(Y = 1)) = z
 $$
@@ -182,7 +180,7 @@ $$
 
 -   Phi inverse thus helps us transform a probability to the latent variable z
 
-::: {.fragment}
+::: fragment
 ```{r, echo=F, eval=T, fig.height=3}
 z_values <- seq(-3, 3, length.out = 100)
 cumulative_probs <- pnorm(z_values)
@@ -194,21 +192,17 @@ plot(z_values, cumulative_probs, type = "l",
 
 ## What exactly is the latent variable?
 
-- We can rewrite our model in the following way:
+-   We can rewrite our model in the following way:
 
-
-::: {.fragment}
+::: fragment
 $$
 \phi^{-1}(P(Y = 1)) = \beta_0 + \beta_1x_1 + ... + \beta_nx_n + \epsilon
 $$
 :::
 
+-   Note that our outcome is a z-score now
 
-- Note that our outcome is a z-score now
-
-
-- Thus, when we estimate our betas using Maximum Likelihood, we interpret them as being a **change in the z-score of the outcome that we observe**. We then transform this z score to a probability using the z-table
-
+-   Thus, when we estimate our betas using Maximum Likelihood, we interpret them as being a **change in the z-score of the outcome that we observe**. We then transform this z score to a probability using the z-table
 
 ## Assumptions of Probit Regression
 
@@ -222,7 +216,7 @@ $$
 
 -   Outcome 'admit' (binary) and predictor 'gpa'
 
-::: {.fragment}
+::: fragment
 ```{r, eval=T, echo=F}
 my_data <- read.csv('https://stats.idre.ucla.edu/stat/data/binary.csv')
 head(my_data)
@@ -242,7 +236,7 @@ ggplot(my_data, aes(x = gpa, y = admit)) +
 
 -   Fitting the model
 
-::: {.fragment}
+::: fragment
 ```{r}
 fit_probit_correct <- glm(admit ~ gpa + gre, data = my_data,
                  family = binomial(link = 'probit'))
@@ -254,8 +248,8 @@ summary(fit_probit_correct)$coef
 
 ## The correct model: Linearity Assumption
 
--   Checking if the z-score of the outcome and predictor have a linear relationship
-::: {.fragment} 
+-   Checking if the z-score of the outcome and predictor have a linear relationship ::: {.fragment}
+
 ```{r}
 my_data$probabilities_correct <- fit_probit_correct$fitted.values
 my_data <- my_data %>%
@@ -265,6 +259,7 @@ ggplot(my_data, aes(y = probit_correct, x = gpa))+
     geom_smooth(method = 'loess') +
     theme_bw()
 ```
+
 :::
 
 ## The correct model: AUC
@@ -283,8 +278,8 @@ auc_probit_correct
 
 ## The incorrect model: Linearity Assumption
 
--   Breaking the assumption that the z-score of the outcome and the predictor/s have a linear relationship
-::: {.fragment}
+-   Breaking the assumption that the z-score of the outcome and the predictor/s have a linear relationship ::: {.fragment}
+
 ```{r}
 my_data$probit_incorrect <- my_data$probit_correct + my_data$gpa^4
 ggplot(my_data, aes(y = probit_incorrect, x = gpa))+
@@ -292,6 +287,7 @@ ggplot(my_data, aes(y = probit_incorrect, x = gpa))+
     geom_smooth(method = "loess") +
     theme_bw() 
 ```
+
 :::
 
 ## The incorrect model: AUC
@@ -308,9 +304,9 @@ auc_probit_incorrect <- as.numeric(perf_probit_incorrect@y.values)
 auc_probit_incorrect
 ```
 
-## Negative Binomial regression
-
 ## Logistic regression
+
+Similar to our probit regression, we used `optim` to maximize our log likelihood function
 
 ```{r}
 source("./logistic.R")
@@ -325,7 +321,14 @@ optim_logistic <- function(beta, X, Y) {
 }
 ```
 
-------------------------------------------------------------------------
+\begin{align*}
+\pi &= X_i\beta\\
+\ell(\beta_0, \beta) &= \prod^{n}_{i=1}\pi^{y_i}(1-\pi)^{1-y_i}\\
+&=\sum^{n}_{i=1} y_i \cdot log(\pi) + (1-y_i) * log(1-\pi)
+\end{align*}
+
+
+## Simulate some data
 
 ```{r echo=T}
 sim_data <- data.frame(
@@ -340,16 +343,25 @@ sim_data$y <- rbinom(
 )
 ```
 
-## Output from GLM
+## Output from GLM {auto-animate="true"}
+
+## Output from GLM {auto-animate="true"}
 
 ```{r}
+cat("GLM logistic function")
 fit_sim_data <- glm(y ~ x1 + x2 + x3, data = sim_data, family = binomial)
 t(summary(fit_sim_data)$coef)[1:2, ]
 ```
 
-## Output from my logistic function
+## Output from GLM {auto-animate="true"}
 
 ```{r}
+cat("GLM logistic function")
+fit_sim_data <- glm(y ~ x1 + x2 + x3, data = sim_data, family = binomial)
+t(summary(fit_sim_data)$coef)[1:2, ]
+
+
+cat("\nOur logistic function")
 logistic_function(fn_formula = "y ~ x1 + x2 + x3", data = sim_data)
 ```
 
@@ -362,9 +374,94 @@ fit_Donner <- glm(survived ~ age + sex + status, data = Donner, family = "binomi
 
 ```{r echo=T}
 summary(fit_Donner)$coef
-logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
+t(logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner))
 ```
 
-## Poisson regression
+## How it works for categorical variables
 
-## Zero-inflated Poisson regression
+```{r echo=T}
+logistic_function <- function(fn_formula, data) {
+  ...
+  vars <- all.vars(as.formula(fn_formula))
+  y_name <- vars[1]
+  x_name <- vars[2:length(vars)]
+  n <- nrow(data)
+  Y <- matrix(data[, y_name], nrow = n, ncol = 1)
+  X <- matrix(cbind(rep(1, n)))
+
+  # take in categorical data
+  var_names <- vector("character")
+  for (i in x_name) {
+    if (suppressWarnings(all(!is.na(as.numeric(as.character(data[, i])))))) {
+      X <- cbind(X, as.numeric(as.character(data[, i])))
+      var_names <- c(var_names, i)
+    } else {
+      categories <- sort(unique(data[, i]))
+      for (j in categories[2:length(categories)]) {
+        new_col_name <- paste0(i, j)
+        new_col <- ifelse(data[, i] == j, 1, 0)
+        X <- cbind(X, new_col)
+        var_names <- c(var_names, new_col_name)
+      }
+    }
+  }
+}
+```
+
+- supply the formula `logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)`
+
+## How it works for categorical variables
+
+```{r echo=T}
+logistic_function <- function(fn_formula, data) {
+  ...
+  vars <- all.vars(as.formula(fn_formula))
+  y_name <- vars[1]
+  x_name <- vars[2:length(vars)]
+  n <- nrow(data)
+  Y <- matrix(data[, y_name], nrow = n, ncol = 1)
+  X <- matrix(cbind(rep(1, n)))
+
+  # take in categorical data
+  var_names <- vector("character")
+  for (i in x_name) {
+    if (suppressWarnings(all(!is.na(as.numeric(as.character(data[, i])))))) {
+      X <- cbind(X, as.numeric(as.character(data[, i])))
+      var_names <- c(var_names, i)
+    } else {
+      categories <- sort(unique(data[, i]))
+      for (j in categories[2:length(categories)]) {
+        new_col_name <- paste0(i, j)
+        new_col <- ifelse(data[, i] == j, 1, 0)
+        X <- cbind(X, new_col)
+        var_names <- c(var_names, new_col_name)
+      }
+    }
+  }
+}
+```
+
+::: {.nonincremental}
+- creates dummy column for every non-numeric variable (i.e. 1 if sexMale, 0 if not male)
+:::
+
+
+## Guiding Question:
+
+Does building your regression function help you gain a deep understanding of how regression models work under the hood?
+
+## Goals of the Project:
+
+When would you use the regression model you chose? When is it preferable to use and when not?
+
+Estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models - show we get similar output as R gives us
+
+How does it work?
+
+Check the assumptions of each model - probably see residuals?
+
+Discuss the implications of breaking assumptions for the models
+
+What are the applications of the model?
+
+Discuss obstacles we are going through/went through + how we plan to/how we did solve them
