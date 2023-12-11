@@ -279,8 +279,6 @@ our_implementation_probit
 r_implementation_probit
 ```
 
--   We are currently working on estimating the standard errors using bootstrapping
-
 ## How does it work?
 
 -   In linear regression, we tried to minimize the sum of least squares
@@ -460,7 +458,7 @@ auc_probit_incorrect <- as.numeric(perf_probit_incorrect@y.values)
 auc_probit_incorrect
 ```
 
-## 
+# Thank You
 
 ## Guiding Question:
 
