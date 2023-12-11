@@ -116,13 +116,14 @@ r_implementation_probit
 
 -   In probit regression, we use Maximum Likelihood Estimation to get at the best estimate of our betas (regression coefficients)
 
-## Maximum Likelihood reminder
+## Maximum Likelihood review
 
--   MLE helps us determine which parameter (beta) was our data most likely to come from
+-   MLE helps us determine which parameter (beta) our data was most likely to come from
 
 -   It tries to maximize the likelihood of seeing our data given various curves (parameter values)
 
-```{r, echo=F, eval=T}
+::: {.fragment}
+```{r, echo=F, eval=T, fig.height=3.5}
 x0 <- seq(-3, 3, length.out = 20)
 x1 <- seq(-3, 3, length.out = 20) + 0.3
 y <- pnorm(x0)
@@ -131,6 +132,7 @@ plot(x0, y, type = 'l', col = 'green', ylim = c(0, 1.2),
 lines(x1, y, col = 'red')
 points(x0, y + 0.05, type = 'p', col = 'blue')
 ```
+:::
 
 ## We used 'optim' to maximize our log likelihood function
 
@@ -148,50 +150,65 @@ points(x0, y + 0.05, type = 'p', col = 'blue')
 
     -   this guess updates after every iteration of calculating the gradient of the log likelihood function
 
-    -   the updation stops when further iterations don't further maximize the log likelihood
+    -   the updates stop when further iterations no longer further maximize the log likelihood
 
 ## What exactly are we trying to estimate - what is the latent variable?
 
 -   Our latent variable is z (we do not observe it):
 
+::: {.fragment}
 $$
 z = \beta_0 + \beta_1x_1 + ... + \beta_nx_n + \epsilon
 $$
+:::
 
 -   We want to somehow link z to the probability of our **ACTUALLY OBSERVED** outcome (Y) being 1. We do this using the link function phi
 
+::: {.fragment}
 $$
 P(Y = 1) = \phi(z)
 $$
+:::
 
 ## What exactly is the latent variable?
 
 -   Now, to find z, we take the inverse of phi on both sides
 
+::: {.fragment}
 $$
 \phi^{-1}(P(Y = 1)) = z
 $$
+:::
 
 -   Phi inverse thus helps us transform a probability to the latent variable z
 
-```{r, echo=F, eval=T}
+::: {.fragment}
+```{r, echo=F, eval=T, fig.height=3}
 z_values <- seq(-3, 3, length.out = 100)
 cumulative_probs <- pnorm(z_values)
 plot(z_values, cumulative_probs, type = "l", 
      xlab = "Latent Variable (z)", ylab = "Cumulative Probability", 
      main = "Relationship between z and Cumulative Probabilities")
 ```
+:::
 
 ## What exactly is the latent variable?
 
--   We can rewrite our model in the following way:
+- We can rewrite our model in the following way:
 
+
+::: {.fragment}
 $$
 \phi^{-1}(P(Y = 1)) = \beta_0 + \beta_1x_1 + ... + \beta_nx_n + \epsilon
 $$
+:::
 
--   Note that our outcome is a z-score now
--   Thus, when we estimate our betas using Maximum Likelihood, we interpret them as being a **change in the z-score of the outcome that we observe**. We then transform this z score to a probability using the z-table
+
+- Note that our outcome is a z-score now
+
+
+- Thus, when we estimate our betas using Maximum Likelihood, we interpret them as being a **change in the z-score of the outcome that we observe**. We then transform this z score to a probability using the z-table
+
 
 ## Assumptions of Probit Regression
 
@@ -205,10 +222,12 @@ $$
 
 -   Outcome 'admit' (binary) and predictor 'gpa'
 
+::: {.fragment}
 ```{r, eval=T, echo=F}
 my_data <- read.csv('https://stats.idre.ucla.edu/stat/data/binary.csv')
 head(my_data)
 ```
+:::
 
 ## An example analysis
 
@@ -223,18 +242,20 @@ ggplot(my_data, aes(x = gpa, y = admit)) +
 
 -   Fitting the model
 
+::: {.fragment}
 ```{r}
 fit_probit_correct <- glm(admit ~ gpa + gre, data = my_data,
                  family = binomial(link = 'probit'))
 summary(fit_probit_correct)$coef
 ```
+:::
 
 -   Interpreting the coefficient of gpa: Comparing 2 groups of people, one who got admitted and one who did not, the average gpa of those who did get admitted is around 0.63 z-scores higher than the group which did not
 
 ## The correct model: Linearity Assumption
 
 -   Checking if the z-score of the outcome and predictor have a linear relationship
-
+::: {.fragment} 
 ```{r}
 my_data$probabilities_correct <- fit_probit_correct$fitted.values
 my_data <- my_data %>%
@@ -244,6 +265,7 @@ ggplot(my_data, aes(y = probit_correct, x = gpa))+
     geom_smooth(method = 'loess') +
     theme_bw()
 ```
+:::
 
 ## The correct model: AUC
 
@@ -262,7 +284,7 @@ auc_probit_correct
 ## The incorrect model: Linearity Assumption
 
 -   Breaking the assumption that the z-score of the outcome and the predictor/s have a linear relationship
-
+::: {.fragment}
 ```{r}
 my_data$probit_incorrect <- my_data$probit_correct + my_data$gpa^4
 ggplot(my_data, aes(y = probit_incorrect, x = gpa))+
@@ -270,6 +292,7 @@ ggplot(my_data, aes(y = probit_incorrect, x = gpa))+
     geom_smooth(method = "loess") +
     theme_bw() 
 ```
+:::
 
 ## The incorrect model: AUC
 
@@ -315,8 +338,6 @@ sim_data$y <- rbinom(
   size = 1, 
   prob = plogis(-1 + sim_data$x1 + sim_data$x2 - 0.5 * sim_data$x3)
 )
-
-
 ```
 
 ## Output from GLM
