@@ -22,9 +22,80 @@ Statistical Consulting Research Seminar
 
 # Logistic and Probit Regression Models
 
-## Logistic regression
+## When are they used?
 
-Similar to our probit regression, we used `optim` to maximize our log likelihood function
+-   When the outcome is binary - thus, mainly used for classification problems
+
+-   When the outcome is categorical with more than 2 categories, we use the multinomial logistic or probit regression. We will focus on simple logistic and probit regression here.
+
+## Using logistic regression vs linear probability model
+
+-   When covariates are continuous, there are infinite possible values for the outcome if using linear regression. 
+
+-   Logistic is therefore better than linear if we need to bound the outcome to 0 and 1. 
+
+
+## Logit v/s Probit
+
+-   Since we know that logistic regression is also helpful in predicting binary outcomes, what is the difference between the two?
+
+-   They give almost identical results - they just have different link functions (more on this later)
+
+## Logit v/s Probit
+
+-   If z is the latent variable that we do not observe and p is the probability of Y being 1, then,
+
+    Logit has the link function:
+
+    $$z = log(\frac{p}{1-p})$$
+
+    Probit has the link function:
+
+    $$
+    z = \phi^{-1}(p) 
+    \text{ where } \phi \text{ is the cumulative}\\
+    \text{normal probability density function}
+    $$
+
+## Logit v/s Probit
+
+-   The decision to chose one over the other is discipline-dependent, and it is said that logit is better when you have extreme independent variables (where one particular small or large value will overwhelmingly determine if your outcome is 0 or 1 - overriding the effect of most other variables)
+
+-   There is no 'right' answer to this debate
+
+## Using the `optim` function
+
+1.  Define the predictor variables
+2.  Define the outcome variable
+3.  Define the log likelihood function - this will help estimate our betas (regression coefficients)
+4.  Define an initial guess to update later in order to maximize the log likelihood
+5.  Iterate over the guesses using `optim` to find the parameter which maximizes the log likelihood of seeing the data inputted
+
+## We used 'optim' to maximize our log likelihood function
+
+-   We were a bit unsure about which method of optimization to use. We decided to use optim as it proved to be user-friendly for us
+
+-   Optim is a function in R which takes in a parameter to optimize and the function whose minimum/maximum needs to be found
+
+-   There are many ways that optim can optimize the parameter value. We used a method called 'BFGS' (Broyden Fletcher Goldfarb Shanno)
+
+## We used 'optim' to maximize our log likelihood function
+
+-   BFGS works like this:
+
+    -   it begins with an initial guess of the parameter value
+
+    -   this guess updates after every iteration of calculating the gradient of the log likelihood function
+
+    -   the updates stop when further iterations no longer further maximize the log likelihood
+
+
+
+## Logistic regression assumptions
+
+-   Response variable should be linearly related to the log odds  
+
+## Logistic regression
 
 ```{r}
 source("./logistic.R")
@@ -165,47 +236,6 @@ logistic_function <- function(fn_formula, data) {
 
 # Probit Regression
 
-## When is it used?
-
--   When the outcome is binary - thus, it is mainly used for classification problems
-
--   When the outcome is categorical with more than 2 categories, we use the multinomial probit regression. We will focus on simple probit regression here
-
--   Since we know that logistic regression is also helpful in predicting binary outcomes, what is the difference between the two?
-
-## Logit v/s Probit
-
--   They give almost identical results - they just have different link functions (more on this later)
-
-## Logit v/s Probit
-
--   If z is the latent variable that we do not observe and p is the probability of Y being 1, then,
-
-    Logit has the link function:
-
-    $$z = log(\frac{p}{1-p})$$
-
-    Probit has the link function:
-
-    $$
-    z = \phi^{-1}(p) 
-    \text{ where } \phi \text{ is the cumulative}\\
-    \text{normal probability density function}
-    $$
-
-## Logit v/s Probit
-
--   The decision to chose one over the other is discipline-dependent, and it is said that logit is better when you have extreme independent variables (where one particular small or large value will overwhelmingly determine if your outcome is 0 or 1 - overriding the effect of most other variables)
-
--   There is no 'right' answer to this debate
-
-## Our Implementation of the Probit Function
-
-1.  Define the predictor variables
-2.  Define the outcome variable
-3.  Define the log likelihood function - this will help estimate our betas (regression coefficients)
-4.  Define an initial guess to update later in order to maximize the log likelihood
-5.  Iterate over the guesses using optim to find the parameter which maximizes the log likelihood of seeing the data inputted
 
 ## Our Implementation
 
@@ -275,23 +305,6 @@ points(x0, y + 0.05, type = 'p', col = 'blue')
 ```
 :::
 
-## We used 'optim' to maximize our log likelihood function
-
--   We were a bit unsure about which method of optimization to use. We decided to use optim as it proved to be user-friendly for us
-
--   Optim is a function in R which takes in a parameter to optimize and the function whose minimum/maximum needs to be found
-
--   There are many ways that optim can optimize the parameter value. We used a method called 'BFGS' (Broyden Fletcher Goldfarb Shanno)
-
-## We used 'optim' to maximize our log likelihood function
-
--   BFGS works like this:
-
-    -   it begins with an initial guess of the parameter value
-
-    -   this guess updates after every iteration of calculating the gradient of the log likelihood function
-
-    -   the updates stop when further iterations no longer further maximize the log likelihood
 
 ## What exactly are we trying to estimate - what is the latent variable?
 
