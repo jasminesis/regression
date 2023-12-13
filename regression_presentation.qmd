@@ -24,7 +24,7 @@ Statistical Consulting Research Seminar
 
 ## When are they used?
 
--   When the outcome is binary - thus, mainly used for classification problems
+-   When the outcome is binary - thus, mainly used for classification problems.
 
 -   When the outcome is categorical with more than 2 categories, we use the multinomial logistic or probit regression. We will focus on simple logistic and probit regression here.
 
