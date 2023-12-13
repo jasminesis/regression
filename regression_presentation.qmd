@@ -30,17 +30,15 @@ Statistical Consulting Research Seminar
 
 ## Using logistic regression vs linear probability model
 
--   When covariates are continuous, there are infinite possible values for the outcome if using linear regression. 
+-   When covariates are continuous, there are infinite possible values for the outcome if using linear regression.
 
--   Logistic is therefore better than linear if we need to bound the outcome to 0 and 1. 
-
+-   Logistic is therefore better than linear if we need to bound the outcome to 0 and 1.
 
 ## Logit v/s Probit
 
 -   Since we know that logistic regression is also helpful in predicting binary outcomes, what is the difference between the two?
 
 -   They give almost identical results - they just have different link functions (more on this later)
-
 
 ## Logit v/s Probit
 
@@ -64,18 +62,15 @@ Statistical Consulting Research Seminar
 
 -   There is no 'right' answer to this debate
 
-
-
 ## We used 'optim' to maximize our log likelihood function
 
 -   We were a bit unsure about which method of optimization to use. We decided to use optim as it proved to be user-friendly for us
 
 -   Optim is a function in R which takes in a parameter to optimize and the function whose minimum/maximum needs to be found
 
-
 ## Using the `optim` function
 
-::: {.nonincremental}
+::: nonincremental
 1.  Define the predictor variables
 2.  Define the outcome variable
 3.  Define the log likelihood function - this will help estimate our betas (regression coefficients)
@@ -95,10 +90,9 @@ Statistical Consulting Research Seminar
 
     -   the updates stop when further iterations no longer further maximize the log likelihood
 
-
 ## Logistic regression assumptions
 
--   Response variable should be linearly related to the log odds  
+-   Response variable should be linearly related to the log odds
 
 ## Logistic regression
 
@@ -241,7 +235,6 @@ logistic_function <- function(fn_formula, data) {
 
 # Probit Regression
 
-
 ## Our Implementation
 
 ```{r, echo=T, eval=F}
@@ -307,7 +300,6 @@ lines(x1, y, col = 'red')
 points(x0, y + 0.05, type = 'p', col = 'blue')
 ```
 :::
-
 
 ## What exactly are we trying to estimate - what is the latent variable?
 
