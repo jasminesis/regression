@@ -10,6 +10,7 @@ set.seed(123)
 
 library(tidyverse)
 library(dplyr)
+library(MASS)
 ```
 
 # Linear Regression
@@ -503,7 +504,7 @@ prediction_not_linear <-
   )
 accuracy_not_linear <-
   sum(prediction_not_linear == test_probit_regression_data_not_linear$y) / 1000
-accuracy_not_linear / 1000 # lower accuracy here
+accuracy_not_linear # lower accuracy here
 ```
 
 We note that Probit Regression is not performing as well in this case.
@@ -578,7 +579,7 @@ accuracy_comparison
 
 ## Conclusion
 
-The implementation of probit regression where all assumptions are met performs the best; i.e. it gives us predictions which are more accurate to the true outcome values.
+The implementation of Probit Regression where all assumptions are met performs the best; i.e. it gives us predictions which are more accurate to the true outcome values.
 
 # Negative Binomial Regression
 
@@ -588,11 +589,14 @@ Negative Binomial Regression is used for predicting count data, similar to Poiss
 
 ## Uses
 
-Negative Binomial Regression is used to model count data with excess zeros (as in the Zero-Inflated Negative Binomial Regression) and is used to model rare events which are less likely to have counts where mean = variance. Negative Binomial can be extended to handle correlated/clustered data as well by using generalized estimating equations (GEE) or mixed-effects negative binomial models.
+Negative Binomial Regression is used to model count data with excess zeros (as in the Zero-Inflated Negative Binomial Regression) and is used to model rare events which are less likely to have counts where mean = variance. Negative Binomial can be extended to handle correlated/clustered data as well.
 
 ## Assumptions
 
-- 
+- The outcome represents count data
+- The variance of the outcome is greater than its mean
+- The relationship between the predictors and the log of the outcome's mean is linear
+- The errors are independent of one another
 
 ## Our Negative Binomial Regression Implementation
 
@@ -694,7 +698,7 @@ negative_binomial_regression <- function(data, ..., y) {
 }
 ```
 
-Creating a function to predict the outcomes based on our Probit Regression implementation.
+Creating a function to predict the outcomes based on our Negative Binomial Regression implementation.
 
 ```{r}
 predict_neg_binom <-
@@ -751,7 +755,7 @@ r_implementation_neg_binom
 
 We note that the results are similar.
 
-We followed all assumptions of Negative Binomial Regression in regressing y on x1 and x2 using the test_probit_regression_data data set. We will compare the residual of this regression to that of all the others where assumptions will be broken.
+We followed all assumptions of Negative Binomial Regression in regressing y on x1 and x2 using the test_neg_binom_regression_data data set. We will compare the residual of this regression to that of all the others where assumptions will be broken.
 
 The residual for where all assumptions are met:
 
@@ -768,7 +772,8 @@ prediction_all_assumptions_met <-
   )
 residual_all_assumptions_met <- sqrt(mean((
   test_neg_binom_regression_data$y - prediction_all_assumptions_met
-)^2)) # small residual
+)^2)) 
+residual_all_assumptions_met # small residual
 # residual plot
 plot(
   test_neg_binom_regression_data$y - prediction_all_assumptions_met,
@@ -787,21 +792,21 @@ abline(
 
 ## Breaking Assumptions
 
-### Breaking the assumption that the relationship between the predictors and the log of the outcome's mean
+### Breaking the assumption that the relationship between the predictors and the log of the outcome's mean is linear
 
 Creating a data set where, if we apply Negative Binomial regression, this assumption will be broken.
 
 ```{r}
 x1 <- rnorm(100, mean = 0, sd = 0.5)
 x2 <- rnorm(100, mean = 0, sd = 0.5)
-y <- rnbinom(100, mu = exp(x1 + x2)^3, size = 0.5)
+y <- rnbinom(100, mu = exp(x1 + x2)^2, size = 0.5)
 test_neg_binom_regression_data_not_linear <- data.frame(x1, x2, y)
 # to ensure that the variance of the outcome variable is greater
 # than its mean
 var(y) > mean(y)
 ```
 
-Using our implementation of Negative Binomial to fit the model and get residual measure.
+Using our implementation of Negative Binomial to fit the model and get a residual measure.
 
 ```{r}
 our_implementation_neg_binom_not_linear <-
@@ -825,7 +830,8 @@ prediction_not_linear <-
   )
 residual_not_linear <- sqrt(mean((
   test_neg_binom_regression_data_not_linear$y - prediction_not_linear
-)^2)) # large residual
+)^2)) 
+residual_not_linear # large residual
 # residual plot
 plot(
   test_neg_binom_regression_data_not_linear$y - prediction_not_linear,
@@ -856,7 +862,7 @@ test_neg_binom_regression_data_mean_greater <- data.frame(x1, x2, y)
 var(y) > mean(y)
 ```
 
-Using our implementation of Negative Binomial to fit the model and get residual measure.
+Using our implementation of Negative Binomial to fit the model and get a residual measure.
 
 ```{r}
 our_implementation_neg_binom_mean_greater <-
@@ -867,6 +873,7 @@ our_implementation_neg_binom_mean_greater <-
     y = test_neg_binom_regression_data_mean_greater$y
   )
 our_implementation_neg_binom_mean_greater
+
 prediction_mean_greater <-
   as.numeric(
     predict_neg_binom(
@@ -879,7 +886,8 @@ prediction_mean_greater <-
   )
 residual_mean_greater <- sqrt(mean((
   test_neg_binom_regression_data_mean_greater$y - prediction_mean_greater
-)^2)) # large residual
+)^2)) 
+residual_mean_greater
 # residual plot
 plot(
   test_neg_binom_regression_data_mean_greater$y - prediction_mean_greater,
@@ -919,10 +927,10 @@ residual_comparison
 
 ## Conclusion
 
-The implementation of negative binomial regression where all assumptions are met performs well; however, even the model where an assumption is broken; i.e. where the mean of the outcome is greater than its variance, performs well too.
+The implementation of Negative Binomial Regression where all assumptions are met performs well; however, even the model where an assumption is broken; i.e. where the mean of the outcome is greater than its variance, performs well too - however, it should be noted that even though its predictions might be accurate, its standard errors and p-values might be biased.
 
 # A Note
 
-In determining how appropriate a particular regression model is for a problem, we think it might be valuable to move beyond a 'assumption #1 met' or 'assumption #1 not met' assessment of assumptions. Instead, it might be more helpful for researchers to explore their data, and test assumptions on their own to determine 'what level of assumption-violation' might they be willing to accept given they are experts in their fields and have domain-specific contextual knowledge. This is not to say that assumptions can be violated without consequences.
+In determining how appropriate a particular regression model is for a problem, we think it might be valuable to move beyond a 'assumption #1 met' or 'assumption #1 not met' assessment. Instead, it might be more helpful for researchers to explore their data, and test assumptions on their own to determine 'what level of assumption-violation' might they be willing to accept given they are experts in their fields and have domain-specific contextual knowledge. This is not to say that assumptions can be violated without consequences.
 
-Also, it might be difficult to determine the thresholds for having actually met or not met an assumption. Thus, a function which simply outputs a 'yes' or 'no' to whether assumptions for a particular regression implementation have been met did not seem appropriate. We therefore, test assumptions by intentionally breaking them and noting the extent of bias-ness that they result in. 
+Also, it might be difficult to determine the thresholds for having actually met or not met an assumption. Thus, a function which simply outputs a 'yes' or 'no' to whether assumptions for a particular regression implementation have been met did not seem appropriate. We therefore, test assumptions by intentionally breaking them and noting the extent of bias-ness that they result. 
