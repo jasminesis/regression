@@ -29,12 +29,12 @@ probit_regression <- function(data, ..., y) {
     fn = probit.loglikelihood,
     X = X,
     Y = Y,
-    method = NULL,
+    method = 'BFGS',
   )$par
   # creating a vector 'estimate' for the beta coefficients
   estimate <- result
   # bootstrapping to estimate the standard errors
-  num_bootstraps <- 100
+  num_bootstraps <- 10000
   result_bootstrap <-
     matrix(0, nrow = num_bootstraps, ncol = ncol(X))
   for (i in 1:num_bootstraps) {
@@ -57,7 +57,7 @@ probit_regression <- function(data, ..., y) {
       probit.loglikelihood,
       X = X_bootstrap,
       Y = Y_bootstrap,
-      method = NULL
+      method = 'BFGS'
     )$par
   }
   # finding the standard deviation of the bootstrapped betas to find the
@@ -68,7 +68,7 @@ probit_regression <- function(data, ..., y) {
   # defining the degrees of freedom
   df <- nrow(X) - ncol(X)
   # calculating the p-value
-  p <- 2 * (1 - pnorm(z))
+  p <- 2 * pnorm(z, lower.tail = FALSE)
   # defining the row names of the output data frame
   rownames <- c()
   for (i in 1:((ncol(X)) - 1)) {
@@ -88,33 +88,6 @@ probit_regression <- function(data, ..., y) {
     )
   )
 }
-
-# to ensure there is a linear relationship between
-# x1, x2 and y
-# test_probit_regression_data$y <-
-#   c(
-#     ifelse(test_probit_regression_data$x2[1:100] < 0,
-#            0, 1),
-#     ifelse(test_probit_regression_data$x1[101:1000] < 0,
-#            1, 0)
-#   )
-# applying created function to test data frame
-# our_implementation_probit <-
-#   probit_regression(
-#     test_probit_regression_data,
-#     test_probit_regression_data$x1,
-#     test_probit_regression_data$x2,
-#     y = test_probit_regression_data$y
-#   )
-# our_implementation_probit
-# # comparing results to glm output
-# r_implementation_probit <- summary(glm(y ~ x1 + x2,
-#                                        data = test_probit_regression_data,
-#                                        family = binomial(link = 'probit')))
-# r_implementation_probit
-
-################# results are similar
-
 # creating our prediction function for probit regression
 predict_probit <-
   function(data, ..., y, implementation_probit) {
@@ -130,102 +103,69 @@ predict_probit <-
     Y <- matrix(y, nrow = n, ncol = 1)
     estimate <-
       implementation_probit[1:nrow(implementation_probit), 1]
-    print(implementation_probit, estimate)
     pred <- ifelse(X %*% estimate < 0, 0, 1)
     return(pred)
   }
-
-x1 = rnorm(1000, 0, 1)
-x2 = rnorm(1000, 0, 2)
-test_probit_regression_data <- data.frame(x1)
+# test data frame for probit regression
+# to ensure there is a linear relationship between
+# x and the z score of y
+test_probit_regression_data <- data.frame(x1 = rnorm(1000, 0, 1),
+                                          x2 = rnorm(1000, 0, 1))
+test_probit_regression_data$y <- test_probit_regression_data$x1 +
+  rnorm(1000, mean = 0, sd = 0.5)
 test_probit_regression_data$y <-
-  rbinom(n = 1000, size = 1, prob = plogis(x2))
-plot(test_probit_regression_data$y)
-imp <- probit_regression(
-  test_probit_regression_data,
-  test_probit_regression_data$x1,
-  test_probit_regression_data$x2,
-  y = test_probit_regression_data$y
-)
-summary(glm(y ~ x1 + x2, data = test_probit_regression_data,
-            family = binomial(link = 'probit')))
-predict_probit(
-  test_probit_regression_data,
-  test_probit_regression_data$x1,
-  test_probit_regression_data$x2,
-  y = test_probit_regression_data$y,
-  implementation_probit = imp
-)
-predicting_accuracy_all_assumptions_met <- sum(
-  predict_probit(
+  qnorm(pnorm(test_probit_regression_data$y))
+test_probit_regression_data$y <-
+  ifelse(test_probit_regression_data$y < 0, 0, 1)
+# applying created function to test data frame
+our_implementation_probit <-
+  probit_regression(
     test_probit_regression_data,
     test_probit_regression_data$x1,
     test_probit_regression_data$x2,
-    y = test_probit_regression_data$y,
-    implementation_probit = imp
-  )[, 1] == test_probit_regression_data$y
-)
-predicting_accuracy_all_assumptions_met # high accuracy
+    y = test_probit_regression_data$y
+  )
+our_implementation_probit
+# comparing results to glm probit output
+r_implementation_probit <-
+  summary(glm(y ~ x1 + x2, data = test_probit_regression_data,
+              family = binomial(link = 'probit')))
+r_implementation_probit
 
+################# results are similar
 
+# we followed all assumptions of probit regression in
+# regressing y on x1 and x2 using the test_probit_regression_data
+# data set. We will compare the accuracy of this
+# regression to that of all the others where assumptions
+# will be broken
+prediction_all_assumptions_met <-
+  as.numeric(
+    predict_probit(
+      test_probit_regression_data,
+      test_probit_regression_data$x1,
+      test_probit_regression_data$x2,
+      y = test_probit_regression_data$y,
+      implementation_probit = our_implementation_probit
+    )
+  )
+accuracy_all_assumptions_met <-
+  sum(prediction_all_assumptions_met == test_probit_regression_data$y)
+accuracy_all_assumptions_met # high accuracy here
 
-
-
-
-
-# predict_probit(
-#   test_probit_regression_data,
-#   test_probit_regression_data$x1,
-#   test_probit_regression_data$x2,
-#   y = test_probit_regression_data$y,
-#   implementation_probit = our_implementation_probit
-# )
-# predicting_accuracy_all_assumptions_met <- sum(
-#   predict_probit(
-#     test_probit_regression_data,
-#     test_probit_regression_data$x1,
-#     test_probit_regression_data$x2,
-#     y = test_probit_regression_data$y,
-#     implementation_probit = our_implementation_probit
-#   )[, 1] == test_probit_regression_data$y
-# )
-# predicting_accuracy_all_assumptions_met # high accuracy
-
-# assumption 1: the outcome is binary
-# breaking this assumption -- the implementation of this fails
-# test_probit_regression_data_outcome_not_binary <-
-#   data.frame(x1 = rnorm(100, 5, 2),
-#              x2 = rnorm(100, 0, 2))
-# test_probit_regression_data_outcome_not_binary$y <-
-#   rnorm(100)
-# our_implementation_probit_outcome_not_binary <- probit_regression(
-#   test_probit_regression_data_outcome_not_binary,
-#   test_probit_regression_data_outcome_not_binary$x1,
-#   test_probit_regression_data_outcome_not_binary$x2,
-#   y = test_probit_regression_data_outcome_not_binary$y
-# )
-# predict_probit(
-#   test_probit_regression_data_outcome_not_binary,
-#   test_probit_regression_data_outcome_not_binary$x1,
-#   test_probit_regression_data_outcome_not_binary$x2,
-#   y = test_probit_regression_data_outcome_not_binary$y,
-#   implementation_probit = our_implementation_probit_outcome_not_binary
-# )
-
-# assumption 2: the z score of the outcome and the predictors have a linear relationship
+# assumption 1: there is a linear relationship between
+# x and the z score of y
 # breaking this assumption
-x1 <- rnorm(1000, 0.0, 0.2)
-x2 = rnorm(1000, 0.0, 0.2)
 test_probit_regression_data_not_linear <-
-  data.frame(x1,
-             x2,
-             y_prob = x1 * x2 - x1 + x2)
-
-# test_probit_regression_data_not_linear$y_prob <-
-#   plogis(test_probit_regression_data_not_linear$x2)
-
+  data.frame(x1 = rnorm(1000, 0, 1),
+             x2 = rnorm(1000, 0, 1))
 test_probit_regression_data_not_linear$y <-
-  ifelse(test_probit_regression_data_not_linear$y_prob < 0.0, 0, 1)
+  test_probit_regression_data_not_linear$x1 ^ 2 +
+  rnorm(1000, mean = 0, sd = 0.5)
+test_probit_regression_data_not_linear$y <-
+  qnorm(pnorm(test_probit_regression_data_not_linear$y))
+test_probit_regression_data_not_linear$y <-
+  ifelse(test_probit_regression_data_not_linear$y < 0, 0, 1)
 our_implementation_probit_not_linear <-
   probit_regression(
     test_probit_regression_data_not_linear,
@@ -233,41 +173,75 @@ our_implementation_probit_not_linear <-
     test_probit_regression_data_not_linear$x2,
     y = test_probit_regression_data_not_linear$y
   )
-summary(glm(y ~ x1 + x2, data = test_probit_regression_data_not_linear,
-            family = binomial(link = 'probit')))
-
-
-predict_probit(
-  test_probit_regression_data_not_linear,
-  test_probit_regression_data_not_linear$x1,
-  test_probit_regression_data_not_linear$x2,
-  y = test_probit_regression_data_not_linear$y,
-  implementation_probit = our_implementation_probit_not_linear
-)
-predicting_accuracy_not_linear <- sum(
-  predict_probit(
-    test_probit_regression_data_not_linear,
-    ... = c(
+our_implementation_probit_not_linear
+prediction_not_linear <-
+  as.numeric(
+    predict_probit(
+      test_probit_regression_data_not_linear,
       test_probit_regression_data_not_linear$x1,
-      test_probit_regression_data_not_linear$x2
-    ),
-    y = test_probit_regression_data_not_linear$y,
-    implementation_probit = our_implementation_probit_not_linear
-  )[, 1] == test_probit_regression_data_not_linear$y
-)
-
-as.numeric(t(test_probit_regression_data_not_linear$y)) == as.numeric(
-  predict_probit(
-    test_probit_regression_data_not_linear,
-    test_probit_regression_data_not_linear$x1,
-    test_probit_regression_data_not_linear$x2,
-    y = test_probit_regression_data_not_linear$y,
-    implementation_probit = our_implementation_probit_not_linear
+      test_probit_regression_data_not_linear$x2,
+      y = test_probit_regression_data_not_linear$y,
+      implementation_probit = our_implementation_probit_not_linear
+    )
   )
-)
+accuracy_not_linear <-
+  sum(prediction_not_linear == test_probit_regression_data_not_linear$y)
+accuracy_not_linear # lower accuracy here
 
-
-
-# assumption 3: errors are are normally distributed
+# assumption 2: errors are normally distributed
 # (and are independent but we will not be able to show this using code)
 # breaking this assumption
+test_probit_regression_data_not_normally_dist <-
+  data.frame(x1 = rnorm(1000, 0, 1),
+             x2 = rnorm(1000, 0, 1))
+test_probit_regression_data_not_normally_dist$y <-
+  test_probit_regression_data_not_normally_dist$x1 +
+  runif(1000, min = -1, max = 1)
+test_probit_regression_data_not_normally_dist$y <-
+  qnorm(pnorm(test_probit_regression_data_not_normally_dist$y))
+test_probit_regression_data_not_normally_dist$y <-
+  ifelse(test_probit_regression_data_not_normally_dist$y < 0, 0, 1)
+our_implementation_probit_not_normally_dist <-
+  probit_regression(
+    test_probit_regression_data_not_normally_dist,
+    test_probit_regression_data_not_normally_dist$x1,
+    test_probit_regression_data_not_normally_dist$x2,
+    y = test_probit_regression_data_not_normally_dist$y
+  )
+our_implementation_probit_not_normally_dist
+prediction_not_normally_dist <-
+  as.numeric(
+    predict_probit(
+      test_probit_regression_data_not_normally_dist,
+      test_probit_regression_data_not_normally_dist$x1,
+      test_probit_regression_data_not_normally_dist$x2,
+      y = test_probit_regression_data_not_normally_dist$y,
+      implementation_probit = our_implementation_probit_not_normally_dist
+    )
+  )
+accuracy_not_normally_dist <-
+  sum(prediction_not_normally_dist == test_probit_regression_data_not_normally_dist$y)
+accuracy_not_normally_dist # lower accuracy here
+
+# comparing all the accuracies
+accuracy_comparison <-
+  t(
+    data.frame(
+      accuracy_all_assumptions_met,
+      accuracy_not_linear,
+      accuracy_not_normally_dist
+    )
+  )
+row.names(accuracy_comparison) <- c(
+  'All assumptions met',
+  'Linearity assumption violated',
+  'Normality assumption violated'
+)
+colnames(accuracy_comparison) <- 'Accuracy'
+accuracy_comparison
+
+# Conclusion:
+# The implementation of probit regression
+# where all assumptions are met performs
+# the best; i.e. it gives us predictions which
+# are more accurate to the true outcome values

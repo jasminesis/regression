@@ -27,13 +27,13 @@ linear_regression <- function(data, ..., y) {
     matrix(0, nrow = num_bootstraps, ncol = ncol(data))
   for (i in 1:num_bootstraps) {
     sample_indices <- sample(nrow(data), replace = TRUE)
-    bootstrap_data <- data[sample_indices, ]
+    bootstrap_data <- data[sample_indices,]
     bootstrap_X <-
       as.matrix(cbind(1, bootstrap_data[, 1:(ncol(bootstrap_data) - 1)]))
     bootstrap_Y <- as.matrix(bootstrap_data$y, ncol = 1)
     bootstrap_beta <-
       solve(t(bootstrap_X) %*% bootstrap_X) %*% t(bootstrap_X) %*% bootstrap_Y
-    bootstrap_betas[i, ] <- bootstrap_beta
+    bootstrap_betas[i,] <- bootstrap_beta
   }
   # finding the standard deviation of the bootstrapped betas to find the
   # standard error of the coefficients
@@ -166,3 +166,9 @@ row.names(residual_comparison) <- c(
 )
 colnames(residual_comparison) <- 'Residuals'
 residual_comparison
+
+# Conclusion:
+# The implementation of linear regression
+# where all assumptions are met performs
+# the best; i.e. it gives us predictions which
+# are closest to the true outcome values
