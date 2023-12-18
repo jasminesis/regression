@@ -1,24 +1,58 @@
-optim_logistic <- function(beta, X, Y) {
-  beta <- as.matrix(beta, nrow = 4)
-  pi <- plogis(X %*% beta)
-  loglikelihood <- -sum(Y * log(pi) + (1 - Y) * log(1 - pi))
-  return(loglikelihood)
-}
+poisson_function <- function(fn_formula, data) {
+  number_omitted <- nrow(data) - nrow(na.omit(data))
+  data <- na.omit(data)
 
-poisson.lik <- function(beta, X, Y) {
-  n <- nrow(Y)
-  mu <- beta[1] + beta[2]*X
-  mu <- ifelse(mu == 0, 0.0001, mu)
-  logl <- sum(Y) * log(mu) - n * mu
-  return(-logl)
+  vars <- all.vars(as.formula(fn_formula))
+  y_name <- vars[1]
+  x_name <- vars[2:length(vars)]
+  n <- nrow(data)
+  Y <- matrix(data[, y_name], nrow = n, ncol = 1)
+  X <- matrix(cbind(rep(1, n)))
+
+  # take in categorical data
+  var_names <- vector("character")
+  for (i in x_name) {
+    if (suppressWarnings(all(!is.na(as.numeric(as.character(data[, i])))))) {
+      X <- cbind(X, as.numeric(as.character(data[, i])))
+      var_names <- c(var_names, i)
+    } else {
+      categories <- sort(unique(data[, i]))
+      for (j in categories[2:length(categories)]) {
+        new_col_name <- paste0(i, j)
+        new_col <- ifelse(data[, i] == j, 1, 0)
+        X <- cbind(X, new_col)
+        var_names <- c(var_names, new_col_name)
+      }
+    }
+  }
+  optim_poisson <- function(beta, X, Y) {
+    beta <- as.matrix(beta, nrow = 4)
+    beta_x <- X %*% beta
+    loglikelihood <- -sum(Y * beta_x - exp(beta_x))
+    return(loglikelihood)
+  }
+  result <- optim(par = rep(0, ncol(X)), fn = optim_poisson, X = X, Y = Y, hessian = T)
+  OI <- solve(result$hessian)
+  se <- sqrt(diag(OI))
+  z_value <- result$par / se
+  df <- nrow(X) - ncol(X)
+  p_value <- 2 * pnorm(-1 * abs(z_value))
+  # https://stats.stackexchange.com/questions/52475/how-are-the-p-values-of-the-glm-in-r-calculated
+
+  coef <- rbind(result$par, se, z_value, p_value)
+
+  colnames(coef) <- c("(Intercept)", var_names)
+  rownames(coef) <- c("Estimate", "Std. Error", "z value", "p value")
+  return(t(coef))
 }
 
 # very important in Poisson Regression is equidispersion, which means that the mean and variance of the distribution are equal.
-x <- rnorm(100)
-y <- ceiling(exp(1 + 0.3*x))
-glm(y ~ x, family=poisson)
-
-mean(y)
-var(y)
-
-optim(par=c(0, 0),  fn=poisson.lik,X=x,Y=y)
+set.seed(2012)
+n <- 1000
+x1 <- runif(n, 0, 100)
+results <- matrix(NA, ncol = 2, nrow = 1e4)
+lambda <- exp(1 + 0.3 * x + rnorm(n))
+y <- rpois(n, lambda = lambda)
+sim_data <- data.frame(y, x1)
+summary(glm(y ~ x1, family = poisson, data = sim_data))$coef
+poisson_function(fn_formula = "y ~ x1", data = sim_data)
