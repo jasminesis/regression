@@ -35,30 +35,35 @@ logistic_function <- function(fn_formula, data) {
     loglikelihood <- -sum(Y * log(pi) + (1 - Y) * log(1 - pi))
     return(loglikelihood)
   }
-  # result <- optimx(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y, control=list(trace=0, all.methods=T))
-  result <- optim(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y, hessian=T)
+  result <- optim(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y, hessian = T)
   OI <- solve(result$hessian)
   se <- sqrt(diag(OI))
+  t_statistic <- result$par / se
+  df <- nrow(X) - ncol(X)
+  p_value <- 2 * pnorm(-1 * abs(t_statistic))
+  # https://stats.stackexchange.com/questions/52475/how-are-the-p-values-of-the-glm-in-r-calculated
 
-  coef <- rbind(result$par, se)
+  coef <- rbind(result$par, se, t_statistic, p_value)
   colnames(coef) <- c("(Intercept)", var_names)
-  rownames(coef) <- c("Estimate", "Std. Error")
-  return(coef)
+  rownames(coef) <- c("Estimate", "Std. Error", "z value", "p value")
+
+  return(t(coef))
 }
 
+# create fake data
 sim_data <- data.frame(x1 = rnorm(100, 2, 1), x2 = rnorm(100, 4, 1), x3 = rnorm(100, 6, 1))
-sim_data$y <- rbinom(100, size = 1, prob = plogis(-1 + sim_data$x1 + sim_data$x2 - 0.5 * sim_data$x3))
+sim_data$y <- rbinom(100,
+  size = 1, prob =
+    plogis(-1 + sim_data$x1 + sim_data$x2 - 0.5 * sim_data$x3)
+)
 
+# compare DIY logistic function with glm
 fit_sim_data <- glm(y ~ x1 + x2 + x3, data = sim_data, family = binomial)
-t(summary(fit_sim_data)$coef)[1:2, ]
+summary(fit_sim_data)$coef
 logistic_function(fn_formula = "y ~ x1 + x2 + x3", data = sim_data)
 
-
+# compare DIY logistic function with glm for categorical data
 Donner$survived <- Donner$y == "survived"
 fit_Donner <- glm(survived ~ age + sex + status, data = Donner, family = "binomial")
 summary(fit_Donner)$coef
 logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
-
-# View(model.matrix(fit_Donner))
-# View(X)
-
