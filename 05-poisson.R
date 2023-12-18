@@ -1,3 +1,6 @@
+library(ggplot2)
+library(glmbb) # for crabs data
+
 poisson_function <- function(fn_formula, data) {
   number_omitted <- nrow(data) - nrow(na.omit(data))
   data <- na.omit(data)
@@ -56,3 +59,15 @@ y <- rpois(n, lambda = lambda)
 sim_data <- data.frame(y, x1)
 summary(glm(y ~ x1, family = poisson, data = sim_data))$coef
 poisson_function(fn_formula = "y ~ x1", data = sim_data)
+
+
+
+data(crabs)
+summary(glm(satell ~ width, family = poisson(link="log"), data = crabs))$coef
+mean(crabs$satell)
+var(crabs$satell)
+
+
+poisson_function(fn_formula = "satell ~ width", data = crabs)
+ggplot(crabs) + geom_point(aes(x = width, y = satell))
+

@@ -97,7 +97,7 @@ Statistical Consulting Research Seminar
 ## Logistic regression
 
 ```{r}
-source("./logistic.R")
+source("../04-logistic.R")
 ```
 
 ```{r echo=T}
@@ -270,7 +270,7 @@ probit_regression <- function(data, x1, x2, ..., y) {
 ## We get similar values as R
 
 ```{r, eval=T, echo=T}
-source('./probit.R')
+source('../02-probit.R')
 # our output
 our_implementation_probit
 # r's output

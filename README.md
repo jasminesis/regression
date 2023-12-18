@@ -1,7 +1,8 @@
 # Regression
-DIY Regression project for Stat Consulting
-Jasmine Siswandjo and Saumya Seth
 
+DIY Regression project for Stats Consulting
+Fall 2023
+Jasmine Siswandjo and Saumya Seth
 
 1. Linear regression - Saumya
 2. Probit regression - Saumya
@@ -9,7 +10,6 @@ Jasmine Siswandjo and Saumya Seth
 4. Logistic regression - Jasmine
 5. Poisson regression  - Jasmine
 6. Zero-inflated Poisson regression - Jasmine
-
 
 Goals of the Project: 
 - To implement our own functions for regression without using in-built regression packages in R. We will estimate coefficients of the predictors, estimate their standard errors, and calculate the p-values of said models

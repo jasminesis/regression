@@ -1,0 +1,75 @@
+---
+title: "DIY Regression 2"
+author: "Jasmine Siswandjo and Saumya Seth"
+date: "2023-12-17"
+output: html_document
+---
+
+```{r, message=F}
+set.seed(123)
+
+library(tidyverse)
+library(dplyr)
+library(MASS)
+```
+
+# Logistic Regression
+## Introduction
+
+Logistic 
+
+## Uses
+## Assumptions
+
+- Independence of errors. 
+
+- For binary logistic regression, that response variables are binary.
+
+- Linear relationship between the response variable and log odds of the explanatory variables.
+
+- No multicollinearity.
+
+## Our Logistic Regression Implementation
+
+**Interpretation of the coefficients**
+
+## Breaking Assumptions
+## Comparing ... 
+## Next Steps
+
+- Instead of just using maximum likelihood, we could try using iteratively reweighted least squares or Newton-Ralphson. 
+
+## Conclusion
+
+# Poisson Regression
+
+## Introduction
+
+Poisson regression is used for count and rate data. 
+
+## Uses
+
+
+## Assumptions
+## Our Logistic Regression Implementation
+## Breaking Assumptions
+## Comparing ... 
+## Next Steps
+## Conclusion
+
+
+# Zero-Inflated Poisson Regression
+
+## Introduction
+
+Poisson regression is used for count and rate data. 
+
+## Uses
+
+
+## Assumptions
+## Our Logistic Regression Implementation
+## Breaking Assumptions
+## Comparing ... 
+## Next Steps
+## Conclusion

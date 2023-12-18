@@ -2,10 +2,12 @@
 title: "DIY Regression"
 author: "Jasmine Siswandjo and Saumya Seth"
 date: "2023-12-17"
-output: pdf_document
+output: html_document
 ---
 
-```{r}
+# TODO: currently just has linear, probit and negative binomial
+
+```{r echo=F}
 set.seed(123)
 
 library(tidyverse)
@@ -772,7 +774,7 @@ prediction_all_assumptions_met <-
   )
 residual_all_assumptions_met <- sqrt(mean((
   test_neg_binom_regression_data$y - prediction_all_assumptions_met
-)^2)) 
+)^2))
 residual_all_assumptions_met # small residual
 # residual plot
 plot(
@@ -830,7 +832,7 @@ prediction_not_linear <-
   )
 residual_not_linear <- sqrt(mean((
   test_neg_binom_regression_data_not_linear$y - prediction_not_linear
-)^2)) 
+)^2))
 residual_not_linear # large residual
 # residual plot
 plot(
@@ -886,7 +888,7 @@ prediction_mean_greater <-
   )
 residual_mean_greater <- sqrt(mean((
   test_neg_binom_regression_data_mean_greater$y - prediction_mean_greater
-)^2)) 
+)^2))
 residual_mean_greater
 # residual plot
 plot(
