@@ -1,4 +1,5 @@
 library(ggplot2)
+library(MASS)
 library(glmbb) # for crabs data
 
 poisson_function <- function(fn_formula, data) {
@@ -54,20 +55,42 @@ set.seed(2012)
 n <- 1000
 x1 <- runif(n, 0, 100)
 results <- matrix(NA, ncol = 2, nrow = 1e4)
-lambda <- exp(1 + 0.3 * x + rnorm(n))
+lambda <- exp(1 + 0.3 * x1 + rnorm(n))
 y <- rpois(n, lambda = lambda)
+# super over-dispersed
+mean(y)
+var(y)
 sim_data <- data.frame(y, x1)
 summary(glm(y ~ x1, family = poisson, data = sim_data))$coef
 poisson_function(fn_formula = "y ~ x1", data = sim_data)
 
 
+# comparing coefficients with crabs data
+data(crabs, package="glmbb")
+summary(glm(satell ~ width, family = poisson(link = "log"), data = crabs))$coef
 
-data(crabs)
-summary(glm(satell ~ width, family = poisson(link="log"), data = crabs))$coef
+# a bit over-dispersed
 mean(crabs$satell)
 var(crabs$satell)
 
-
 poisson_function(fn_formula = "satell ~ width", data = crabs)
-ggplot(crabs) + geom_point(aes(x = width, y = satell))
+ggplot(crabs) +
+  geom_histogram(aes(x = satell))
+  # geom_histogram(aes(x = width, y = satell))
 
+M1 <- glm(satell ~ width, family = poisson(link = "log"), data = crabs)
+M2 <- glm.nb(satell ~ width, data = crabs)
+M3 <- pscl::zeroinfl(satell ~ width | width, data=crabs)
+
+# estimate overdispersion
+estimate_overdisp <- function(model_obj, data) {
+  z <- resid(model_obj, type = "pearson")
+  n <- nrow(data)
+  k <- length(coef(model_obj))
+  overdisp_ratio <-  sum(z^2) / (n - k)
+  p_val <- pchisq(sum(z^2), (n - k))
+  return(c(overdisp_ratio, p_val))
+}
+estimate_overdisp(M1, crabs)
+estimate_overdisp(M2, crabs)
+estimate_overdisp(M3, crabs)

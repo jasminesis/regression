@@ -7,37 +7,171 @@ output: html_document
 
 ```{r, message=F}
 set.seed(123)
-
+library(alr4)
 library(tidyverse)
-library(dplyr)
 library(MASS)
+library(pscl)
+library(glmbb) # for crabs data
 ```
 
 # Logistic Regression
+
 ## Introduction
 
-Logistic 
+Logistic regression is used when the outcome variable is discrete and binary, which is called classification. Multinomial logistic regression can classify observations into more than two categories, but we are only doing simple logistic regression here, with two categories.
 
 ## Uses
+
+Logistic regression is good for when covariates are continuous, as the outcome variables are bounded between 0 and 1, through the logit link. 
+
+
+
 ## Assumptions
 
-- Independence of errors. 
+-   For binary logistic regression, that response variables are binary
 
-- For binary logistic regression, that response variables are binary.
+-   Independence of errors
 
-- Linear relationship between the response variable and log odds of the explanatory variables.
+-   Linear relationship between the response variable and log odds of the explanatory variables
 
-- No multicollinearity.
+-   No multicollinearity
+
+-   Large sample size
 
 ## Our Logistic Regression Implementation
 
+```{r}
+logistic_function <- function(fn_formula, data) {
+  number_omitted <- nrow(data) - nrow(na.omit(data))
+  data <- na.omit(data)
+
+  # set up the predictors and response variable matrix
+  vars <- all.vars(as.formula(fn_formula))
+  y_name <- vars[1]
+  x_name <- vars[2:length(vars)]
+  n <- nrow(data)
+  Y <- matrix(data[, y_name], nrow = n, ncol = 1)
+  X <- matrix(cbind(rep(1, n)))
+
+  # take in categorical data
+  var_names <- vector("character")
+  for (i in x_name) {
+    if (suppressWarnings(all(!is.na(as.numeric(as.character(data[, i])))))) {
+      X <- cbind(X, as.numeric(as.character(data[, i])))
+      var_names <- c(var_names, i)
+    } else {
+      categories <- sort(unique(data[, i]))
+      for (j in categories[2:length(categories)]) {
+        new_col_name <- paste0(i, j)
+        new_col <- ifelse(data[, i] == j, 1, 0)
+        X <- cbind(X, new_col)
+        var_names <- c(var_names, new_col_name)
+      }
+    }
+  }
+  # log likelihood function
+  optim_logistic <- function(beta, X, Y) {
+    beta <- as.matrix(beta, nrow = 4)
+    pi <- plogis(X %*% beta)
+    loglikelihood <- -sum(Y * log(pi) + (1 - Y) * log(1 - pi))
+    return(loglikelihood)
+  }
+  # start with an initial guess of parameter values
+  result <- optim(par = rep(0, ncol(X)), fn = optim_logistic, X = X, Y = Y, hessian = T)
+
+  # use hessian to get standard errors
+  OI <- solve(result$hessian)
+  se <- sqrt(diag(OI))
+  t_statistic <- result$par / se
+  df <- nrow(X) - ncol(X)
+  p_value <- 2 * pnorm(-1 * abs(t_statistic))
+  # https://stats.stackexchange.com/questions/52475/how-are-the-p-values-of-the-glm-in-r-calculated
+
+  coef <- rbind(result$par, se, t_statistic, p_value)
+  colnames(coef) <- c("(Intercept)", var_names)
+  rownames(coef) <- c("Estimate", "Std. Error", "z value", "p value")
+  return(t(coef))
+}
+```
+
+Creating testing data set with a single predictor variable to compare our implementation with `glm` logistic function
+
+```{r}
+# create fake data
+x1 <- rnorm(100, 2, 1)
+prob <- plogis(-1 + 0.5 * x1)
+y <- rbinom(100, 1, prob)
+sim_data <- data.frame(y, x1)
+
+# compare DIY logistic function with glm
+fit_sim_data_1 <- glm(y ~ x1, data = sim_data, family = binomial)
+summary(fit_sim_data_1)$coef
+logistic_function(fn_formula = "y ~ x1", data = sim_data)
+
+# checking for linear relationship
+plot(sim_data$x1, prob,
+  main = "The log odds of y and x1 have a linear relationship", cex.main = 0.6,
+  xlab = "x1", ylab = "y"
+)
+
+# check for correlation of residuals vs fit
+plot(fit_sim_data_1, which = 1)
+```
+
+Using the Durbin-Watson test to test the null hypothesis of whether the errors are not auto-correlated with themselves
+
+```{r}
+durbinWatsonTest(fit_sim_data_1)
+```
+
+Since the p-value > 0.05, we would fail to reject the null hypothesis, and assume independence of the errors.
+
+
+Creating testing data set with multiple covariates to compare our implementation with `glm` logistic function
+
+```{r}
+# create fake data with multiple x's
+x1 <- rnorm(100, 2, 1)
+x2 <- rnorm(100, 4, 1)
+x3 <- rnorm(100, 6, 1)
+prob <- plogis(-1 + x1 + x2 - 0.5 * x3)
+y <- rbinom(100, 1, prob)
+sim_data <- data.frame(y, x1, x2, x3)
+
+# compare DIY logistic function with glm
+fit_sim_data <- glm(y ~ x1 + x2 + x3, data = sim_data, family = binomial)
+summary(fit_sim_data)$coef
+logistic_function(fn_formula = "y ~ x1 + x2 + x3", data = sim_data)
+```
+
+Using the alr4 Donner data to test categorical data, and compare our implementation with `glm` logistic function
+
+```{r}
+Donner$survived <- Donner$y == "survived"
+fit_Donner <- glm(survived ~ age + sex + status, data = Donner, family = "binomial")
+summary(fit_Donner)$coef
+logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
+```
+
 **Interpretation of the coefficients**
 
-## Breaking Assumptions
-## Comparing ... 
+A 1-unit difference in age corresponds to -0.02 in the logit probability of having survived in the Donner party, or a multiplicative change of $e^{-0.0283}=0.972$ in the odds of surviving. 
+
+```{r}
+ggplot(Donner) +
+  geom_jitter(aes(x = age, y = survived, color = survived)) +
+  facet_wrap(vars(status)) +
+  ggtitle("Younger people generally had a higher chance of surviving")
+```
+
+
+## Function to check assumptions
+
+## Comparing ...
+
 ## Next Steps
 
-- Instead of just using maximum likelihood, we could try using iteratively reweighted least squares or Newton-Ralphson. 
+-   Instead of just using maximum likelihood, we could try using iteratively reweighted least squares or Newton-Ralphson.
 
 ## Conclusion
 
@@ -45,31 +179,222 @@ Logistic
 
 ## Introduction
 
-Poisson regression is used for count and rate data. 
+Poisson regression is used for count and rate data. We use Poisson distribution to model the expected value of $Y$, which is denoted by $E(Y) = \mu$. The identity link is the log link, so the Poisson regression model for counts is $log(\mu) = \alpha + \beta x$. The Poisson distribution with parameter $\lambda$, $Poi(\lambda)$ has the probability mass function
+
+$$
+P(X=k) = exp(-\lambda)\frac{\lambda^k}{k!}, k=0,1,2,3,...
+$$
 
 ## Uses
 
+Poisson regression can be used for count data, such as number of asthmatic attacks in one year based on the number of hospital admissions and systolic blood pressure. When the predictor variables are continuous, poisson regression ensures that the outcome variable is positive, compared to a linear regression which might predict negative counts. Another use case for Poisson regression is when the number of cases is small relative to the number of no events, such as when the number of deaths due to COVID-19 are small relative to the total population size. Logistic regression is more useful when we have data on both the binary outcomes (e.g. death and non-deaths).
 
 ## Assumptions
-## Our Logistic Regression Implementation
-## Breaking Assumptions
-## Comparing ... 
-## Next Steps
-## Conclusion
 
+-   Independence of observations
+
+-   Homogeneity of variance
+
+-   Linearity - the relationship between the predictor variables and the log of expected counts should be linear
+
+-   No overdispersion - the mean and variance of the distribution are equal. If the variance is greater than the mean, negative binomial regression may be more appropriate
+
+-   No perfect prediction
+
+## Our Poisson Regression Implementation
+
+```{r}
+poisson_function <- function(fn_formula, data) {
+  number_omitted <- nrow(data) - nrow(na.omit(data))
+  data <- na.omit(data)
+
+  vars <- all.vars(as.formula(fn_formula))
+  y_name <- vars[1]
+  x_name <- vars[2:length(vars)]
+  n <- nrow(data)
+  Y <- matrix(data[, y_name], nrow = n, ncol = 1)
+  X <- matrix(cbind(rep(1, n)))
+
+  # take in categorical data
+  var_names <- vector("character")
+  for (i in x_name) {
+    if (suppressWarnings(all(!is.na(as.numeric(as.character(data[, i])))))) {
+      X <- cbind(X, as.numeric(as.character(data[, i])))
+      var_names <- c(var_names, i)
+    } else {
+      categories <- sort(unique(data[, i]))
+      for (j in categories[2:length(categories)]) {
+        new_col_name <- paste0(i, j)
+        new_col <- ifelse(data[, i] == j, 1, 0)
+        X <- cbind(X, new_col)
+        var_names <- c(var_names, new_col_name)
+      }
+    }
+  }
+  optim_poisson <- function(beta, X, Y) {
+    beta <- as.matrix(beta, nrow = 4)
+    beta_x <- X %*% beta
+    loglikelihood <- -sum(Y * beta_x - exp(beta_x))
+    return(loglikelihood)
+  }
+  result <- optim(par = rep(0, ncol(X)), fn = optim_poisson, X = X, Y = Y, hessian = T)
+  OI <- solve(result$hessian)
+  se <- sqrt(diag(OI))
+  z_value <- result$par / se
+  df <- nrow(X) - ncol(X)
+  p_value <- 2 * pnorm(-1 * abs(z_value))
+  
+  coef <- rbind(result$par, se, z_value, p_value)
+  colnames(coef) <- c("(Intercept)", var_names)
+  rownames(coef) <- c("Estimate", "Std. Error", "z value", "p value")
+  return(t(coef))
+}
+
+# very important in Poisson Regression is equidispersion, which means that the mean and variance of the distribution are equal.
+set.seed(2012)
+n <- 1000
+x1 <- runif(n, 0, 100)
+results <- matrix(NA, ncol = 2, nrow = 1e4)
+lambda <- exp(1 + 0.3 * x1 + rnorm(n))
+y <- rpois(n, lambda = lambda)
+
+# super over-dispersed
+mean(y)
+var(y)
+sim_data <- data.frame(y, x1)
+summary(glm(y ~ x1, family = poisson, data = sim_data))$coef
+poisson_function(fn_formula = "y ~ x1", data = sim_data)
+
+
+# comparing coefficients with crabs data
+data(crabs, package="glmbb")
+summary(glm(satell ~ width, family = poisson(link = "log"), data = crabs))$coef
+
+# a bit over-dispersed
+mean(crabs$satell)
+var(crabs$satell)
+
+poisson_function(fn_formula = "satell ~ width", data = crabs)
+ggplot(crabs) +
+  geom_histogram(aes(x = satell))
+```
+
+
+**Interpretation of coefficients**
+
+A change in 1 unit of width has a multiplicative effect on the mean of $Y$. For a 1 unit increase in log(month), the estimated count increases by a factor of $e^{2.1748} = 8.80$ when the log linear model is $log(\mu_i) = -1.9442 + 2.1748x_i$.
+
+## Breaking Assumptions
+
+One of the main assumptions for Poisson regression is that the mean and variance are equal. When the variance is larger than the mean, there is overdispersion. This can be formally tested using the the overdispersion parameter. 
+
+```{r}
+data(crabs, package = "glmbb")
+M1 <- glm(satell ~ width, family = poisson(link = "log"), data = crabs)
+M2 <- glm.nb(satell ~ width, data = crabs)
+M3 <- pscl::zeroinfl(satell ~ width | width, data=crabs)
+# estimate overdispersion
+estimate_overdisp <- function(model_obj, data) {
+  z <- resid(model_obj, type = "pearson")
+  n <- nrow(data)
+  k <- length(coef(model_obj))
+  overdisp_ratio <- sum(z^2) / (n - k)
+  p_val <- pchisq(sum(z^2), (n - k))
+    return(cat("overdispersion ratio: ", overdisp_ratio, "\n", "p-value:", p_val, "\n"))
+}
+estimate_overdisp(M1, crabs)
+estimate_overdisp(M2, crabs)
+estimate_overdisp(M3, crabs)
+```
+
+The estimated overdispersion for the crabs data is 3.18, which is large, and has a p-value of 1, which indicates that the probability is essentially zero that a random variable from the distribution would be so large. When the negative binomial model is fitted, the crabs data has an estimated overdispersion of 0.85, with a smaller p-value. It is still overdispersed relative to a negative binomial distribution, but to a smaller scale than it was to a Poisson distribution. 
+
+## Comparing ...
+
+## Next Steps
+
+## Conclusion
 
 # Zero-Inflated Poisson Regression
 
 ## Introduction
 
-Poisson regression is used for count and rate data. 
+Poisson regression is used for count and rate data. Zero-inflated poisson regression is for when there is excess zero-count data. ZIP models have one parameter representing the probability of a structured zero, and another representing the Poisson mean. The ZIP distribution has the parameters $\pi$ and $\lambda$, denoted by $ZIP(\pi, \lambda)$, with this probability mass function.
 
+```{=tex}
+\begin{equation}
+  P(X=k) =
+    \begin{cases}
+      \pi + (1-\pi)(exp(-\lambda)) & \text{if $k = 0$}\\
+      (1-\pi)exp(-\lambda)\frac{\lambda^k}{k!} & \text{if $k = 1, 2, 3, ...$}\\
+    \end{cases}       
+\end{equation}
+```
 ## Uses
 
+An example of when ZIP-distributed count happens is when ecologists counting plants or animals get a zero when the species is absent at many sites, but get a Poisson distributed count when they are present. Another example is for estimating the the dental health of individuals, by counting how many dental cavities there are. Most people have 0 dental cavities as children, so this is a good use case for ZIP. 
 
 ## Assumptions
-## Our Logistic Regression Implementation
+
+## Our Zero-inflated Poisson Regression Implementation
+
+```{r}
+zippoisson_function <- function(fn_formula, data) {
+  number_omitted <- nrow(data) - nrow(na.omit(data))
+  data <- na.omit(data)
+
+  vars <- all.vars(as.formula(fn_formula))
+  y_name <- vars[1]
+  covL <- data[, vars[2]]
+  covp <- data[, vars[3]]
+  n <- nrow(data)
+  Y <- matrix(data[, y_name], nrow = n, ncol = 1)
+
+  optim_zip <- function(beta) {
+    lambda <- exp(beta[1] + beta[2] * covL)
+    p <- plogis(beta[3] + beta[4] * covp)
+    lik <- p * (Y == 0) + (1 - p) * dpois(Y, lambda)
+    return(-sum(log(lik)))
+  }
+  result <- optim(par = rep(0, 4), fn = optim_zip, hessian = T)
+  OI <- solve(result$hessian)
+  se <- sqrt(diag(OI))
+  z_value <- result$par / se
+  p_value <- 2 * pnorm(-1 * abs(z_value))
+
+  coef <- rbind(result$par, se, z_value, p_value)
+
+  colnames(coef) <- c("(Intercept)", vars[2], "(Intercept)", vars[3])
+  rownames(coef) <- c("Estimate", "Std. Error", "z value", "p value")
+  return(t(coef))
+}
+```
+
+Comparing performance
+
+```{r}
+set.seed(1)
+n <- 1000
+covL <- seq(0, 1, length.out = n)
+covp <- seq(0, 1, length.out = n)
+trueMeans <- exp(1.5 - 0.5 * covL)
+probability <- plogis(-0.5 + 2.5 * covp)
+U <- runif(n, 0, 1)
+y <- rpois(n, trueMeans)
+y[U < probability] <- 0
+sim_data <- data.frame(y, covL, covp)
+hist(sim_data$y, main = "Histogram of Zero-inflated Poisson", xlab = "Count")
+
+# comparing performance of our implementation with zeroinfl
+zippoisson_function(fn_formula = "y ~ covL | covp", data = sim_data)
+summary(pscl::zeroinfl(y ~ covL | covp))
+```
+
+
 ## Breaking Assumptions
-## Comparing ... 
+
+## Comparing ...
+
 ## Next Steps
+
 ## Conclusion
