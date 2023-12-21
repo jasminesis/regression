@@ -2,7 +2,7 @@ library(alr4)
 set.seed(1)
 # invlogit <- plogis
 
-logistic_function <- function(fn_formula, data) {
+logistic_function <- function(fn_formula, data, predict = F) {
   number_omitted <- nrow(data) - nrow(na.omit(data))
   data <- na.omit(data)
 
@@ -46,10 +46,18 @@ logistic_function <- function(fn_formula, data) {
   coef <- rbind(result$par, se, t_statistic, p_value)
   colnames(coef) <- c("(Intercept)", var_names)
   rownames(coef) <- c("Estimate", "Std. Error", "z value", "p value")
+  coef <- t(coef)
 
-  return(t(coef))
+  b_hat <- result$par
+  predictions <- plogis(X %*% b_hat)
+
+  if (predict) {
+    return(predictions)
+  } else {
+    return(coef)
+  }
 }
-
+head(predict(fit_sim_data, type="response"))
 # create fake data
 sim_data <- data.frame(x1 = rnorm(100, 2, 1), x2 = rnorm(100, 4, 1), x3 = rnorm(100, 6, 1))
 sim_data$y <- rbinom(100,
@@ -67,3 +75,6 @@ Donner$survived <- Donner$y == "survived"
 fit_Donner <- glm(survived ~ age + sex + status, data = Donner, family = "binomial")
 summary(fit_Donner)$coef
 logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner)
+
+# get_prediction
+logistic_function(fn_formula = "survived ~ age + sex + status", data = Donner, predict=T)
