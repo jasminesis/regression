@@ -80,26 +80,31 @@ linear_regression <- function(data, ..., y) {
   # calculating the p-value
   p <- 2 * pt(t, df, lower = F)
   # calculating the residuals
-  residual <- sqrt(mean((Y - X %*% beta)^2))
+  resid <- Y - X %*% beta
+  residual <- sqrt(mean((resid)^2))
   # defining the row names of the output data frame
   rownames <- c()
   for (i in 1:((ncol(X)) - 1)) {
     rownames[i] <- i
   }
-  # returning a data frame akin to the lm output
-  return(
-    data.frame(
-      Estimate = estimate,
-      Std.Error = se,
-      t.value = t,
-      p.value = p,
-      Residual = c(residual, rep(NA, ncol(X) - 1)),
-      DegOfFreedom = c(df, rep(NA, ncol(X) - 1)),
-      row.names = c("(Intercept)", paste0(rep("x", ncol(
-        X
-      ) - 1), rownames))
-    )
+  test <- list(
+    plot(resid, main = "Residual Plot to test homoscedasticity of errors", ylim = c(-10, 10)),
+    qqnorm(resid, main = "Q-Q plot to test normality of errors"),
+    pairs(data, main = "Assessing Linearity of Predictors with Outcome")
   )
+  impl <- data.frame(
+    Estimate = estimate,
+    Std.Error = se,
+    t.value = t,
+    p.value = p,
+    Residual = c(residual, rep(NA, ncol(X) - 1)),
+    DegOfFreedom = c(df, rep(NA, ncol(X) - 1)),
+    row.names = c("(Intercept)", paste0(rep("x", ncol(
+      X
+    ) - 1), rownames))
+  )
+  # returning a data frame akin to the lm output
+  return(list(test, impl))
 }
 ```
 
@@ -130,7 +135,7 @@ plot(error,
 )
 ```
 
-Applying the function we created on this data set.
+## Testing Assumptions for Linear Regression
 
 ```{r}
 our_implementation <- linear_regression(
@@ -138,7 +143,7 @@ our_implementation <- linear_regression(
   test_linear_regression_data$x1,
   test_linear_regression_data$x2,
   y = test_linear_regression_data$y
-)
+)[[2]]
 our_implementation
 ```
 
@@ -195,8 +200,7 @@ our_implementation_not_linear <- linear_regression(
   test_linear_regression_data_not_linear$x1,
   test_linear_regression_data_not_linear$x2,
   y = test_linear_regression_data_not_linear$y
-)
-our_implementation_not_linear
+)[[2]]
 our_implementation_not_linear$Residual[1] # a higher residual here
 ```
 
@@ -228,8 +232,7 @@ our_implementation_not_normally_dist <- linear_regression(
   test_linear_regression_data_not_normally_dist$x1,
   test_linear_regression_data_not_normally_dist$x2,
   y = test_linear_regression_data_not_normally_dist$y
-)
-our_implementation_not_normally_dist
+)[[2]]
 our_implementation_not_normally_dist$Residual[1] # a higher residual here
 ```
 
@@ -266,8 +269,7 @@ our_implementation_not_homoscedastic <- linear_regression(
   test_linear_regression_data_not_homoscedastic$x1,
   test_linear_regression_data_not_homoscedastic$x2,
   y = test_linear_regression_data_not_homoscedastic$y
-)
-our_implementation_not_homoscedastic
+)[[2]]
 our_implementation_not_homoscedastic$Residual[1] # a higher residual here
 ```
 
@@ -353,7 +355,7 @@ probit_regression <- function(data, ..., y) {
   # creating a vector 'estimate' for the beta coefficients
   estimate <- result
   # bootstrapping to estimate the standard errors
-  num_bootstraps <- 10000
+  num_bootstraps <- 10
   result_bootstrap <-
     matrix(0, nrow = num_bootstraps, ncol = ncol(X))
   for (i in 1:num_bootstraps) {
@@ -394,19 +396,23 @@ probit_regression <- function(data, ..., y) {
   for (i in 1:((ncol(X)) - 1)) {
     rownames[i] <- i
   }
-  # returning a data frame akin to the glm probit output
-  return(
-    data.frame(
-      Estimate = estimate,
-      Std.Error = se,
-      z.value = z,
-      p.value = p,
-      DegOfFreedom = c(df, rep(NA, ncol(X) - 1)),
-      row.names = c("(Intercept)", paste0(rep("x", ncol(
-        X
-      ) - 1), rownames))
-    )
+  data_to_plot <- data[, -which(colnames(data) == "y")]
+  data_to_plot$y_zscore <- qnorm(pnorm(data$y))
+  test <- list(
+    pairs(data_to_plot, main = "Assessing Linearity of Predictors with z score of Outcome")
   )
+  impl <- data.frame(
+    Estimate = estimate,
+    Std.Error = se,
+    z.value = z,
+    p.value = p,
+    DegOfFreedom = c(df, rep(NA, ncol(X) - 1)),
+    row.names = c("(Intercept)", paste0(rep("x", ncol(
+      X
+    ) - 1), rownames))
+  )
+  # returning a data frame akin to the glm probit output
+  return(list(test, impl))
 }
 ```
 
@@ -461,6 +467,16 @@ test_probit_regression_data$y <-
 plot(density(error), main = "Errors are normally distributed")
 ```
 
+## Testing Assumptions for Probit Regression
+
+```{r}
+test_probit_reg <- probit_regression(test_probit_regression_data,
+  test_probit_regression_data$x1,
+  test_probit_regression_data$x2,
+  y = test_probit_regression_data$y
+)[[1]]
+```
+
 Applying the function we created on this data set.
 
 ```{r}
@@ -470,7 +486,7 @@ our_implementation_probit <-
     test_probit_regression_data$x1,
     test_probit_regression_data$x2,
     y = test_probit_regression_data$y
-  )
+  )[[2]]
 our_implementation_probit
 ```
 
@@ -543,8 +559,7 @@ our_implementation_probit_not_linear <-
     test_probit_regression_data_not_linear$x1,
     test_probit_regression_data_not_linear$x2,
     y = test_probit_regression_data_not_linear$y
-  )
-our_implementation_probit_not_linear
+  )[[2]]
 
 prediction_not_linear <-
   as.numeric(
@@ -594,8 +609,7 @@ our_implementation_probit_not_normally_dist <-
     test_probit_regression_data_not_normally_dist$x1,
     test_probit_regression_data_not_normally_dist$x2,
     y = test_probit_regression_data_not_normally_dist$y
-  )
-our_implementation_probit_not_normally_dist
+  )[[2]]
 
 prediction_not_normally_dist <-
   as.numeric(
@@ -696,7 +710,7 @@ negative_binomial_regression <- function(data, ..., y) {
   # creating a vector 'estimate' for the beta coefficients
   estimate <- result
   # bootstrapping to estimate the standard errors
-  num_bootstraps <- 10000
+  num_bootstraps <- 10
   result_bootstrap <-
     matrix(0, nrow = num_bootstraps, ncol = ncol(X))
   for (i in 1:num_bootstraps) {
@@ -739,19 +753,23 @@ negative_binomial_regression <- function(data, ..., y) {
   for (i in 1:((ncol(X)) - 1)) {
     rownames[i] <- i
   }
-  # returning a data frame akin to the glm probit output
-  return(
-    data.frame(
-      Estimate = estimate,
-      Std.Error = se,
-      z.value = z,
-      p.value = p,
-      DegOfFreedom = c(df, rep(NA, ncol(X) - 1)),
-      row.names = c("(Intercept)", paste0(rep("x", ncol(
-        X
-      ) - 1), rownames))
-    )
+  data_to_plot <- data[, -which(colnames(data) == "y")]
+  data_to_plot$y_log <- log(data$y)
+  test <- list(
+    pairs(data_to_plot, main = "Assessing Linearity of Predictors with log of Outcome")
   )
+  impl <- data.frame(
+    Estimate = estimate,
+    Std.Error = se,
+    z.value = z,
+    p.value = p,
+    DegOfFreedom = c(df, rep(NA, ncol(X) - 1)),
+    row.names = c("(Intercept)", paste0(rep("x", ncol(
+      X
+    ) - 1), rownames))
+  )
+  # returning a data frame akin to the glm probit output
+  return(list(test, impl))
 }
 ```
 
@@ -797,6 +815,16 @@ plot(test_neg_binom_regression_data$x2, log(test_neg_binom_regression_data$y),
 )
 ```
 
+## Testing Assumptions for Negative Binomial Regression
+
+```{r}
+test_negbinom_reg <- negative_binomial_regression(test_neg_binom_regression_data,
+  test_neg_binom_regression_data$x1,
+  test_neg_binom_regression_data$x2,
+  y = test_neg_binom_regression_data$y
+)[[1]]
+```
+
 Using our implementation of Negative Binomial to fit the model and get residual measure.
 
 ```{r}
@@ -806,7 +834,7 @@ our_implementation_neg_binom <-
     test_neg_binom_regression_data$x1,
     test_neg_binom_regression_data$x2,
     y = test_neg_binom_regression_data$y
-  )
+  )[[2]]
 our_implementation_neg_binom
 ```
 
@@ -888,8 +916,7 @@ our_implementation_neg_binom_not_linear <-
     test_neg_binom_regression_data_not_linear$x1,
     test_neg_binom_regression_data_not_linear$x2,
     y = test_neg_binom_regression_data_not_linear$y
-  )
-our_implementation_neg_binom_not_linear
+  )[[2]]
 
 prediction_not_linear <-
   as.numeric(
@@ -944,8 +971,7 @@ our_implementation_neg_binom_mean_greater <-
     test_neg_binom_regression_data_mean_greater$x1,
     test_neg_binom_regression_data_mean_greater$x2,
     y = test_neg_binom_regression_data_mean_greater$y
-  )
-our_implementation_neg_binom_mean_greater
+  )[[2]]
 
 prediction_mean_greater <-
   as.numeric(
