@@ -1,0 +1,14 @@
+{
+  "hash": "7c564f19a79f9e40f909742c04c9ea08",
+  "result": {
+    "markdown": "---\ntitle: \"setup\"\n---\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(knitr)\nopts_chunk$set(fig.width = 5, fig.height = 4, fig.align = \"left\", out.width = \"8.5in\")\n\nset.seed(123)\nlibrary(tidyverse)\nlibrary(dplyr)\nlibrary(MASS)\nlibrary(alr4)\nlibrary(pscl)\nlibrary(glmbb) # for crabs data\nlibrary(kableExtra)\nlibrary(lmtest)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

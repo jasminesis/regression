@@ -1,0 +1,35 @@
+{
+  "index.qmd": {
+    "index.html": "f913520a"
+  },
+  "about.qmd": {
+    "about.html": "945770bc"
+  },
+  "linear.qmd": {
+    "linear.html": "3e393d48"
+  },
+  "poisson.qmd": {
+    "poisson.html": "623a56d2"
+  },
+  "logistic.qmd": {
+    "logistic.html": "dc4383c0"
+  },
+  "negative_binomial.qmd": {
+    "negative_binomial.html": "2588f462"
+  },
+  "zipoisson.qmd": {
+    "zipoisson.html": "5bcbc9d8"
+  },
+  "probit.qmd": {
+    "probit.html": "e602a189"
+  },
+  "setup.qmd": {
+    "setup.html": "c3c7c51c"
+  },
+  "note.qmd": {
+    "note.html": "1a013d80"
+  },
+  "negative-binomial.qmd": {
+    "negative-binomial.html": "b01defb1"
+  }
+}
