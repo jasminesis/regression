@@ -22,7 +22,6 @@ website:
       - href: note.qmd
         text: "A Note"
 
-
 format:
   html:
     theme: cosmo
@@ -30,4 +29,3 @@ format:
     toc: true
 
 editor: visual
-
