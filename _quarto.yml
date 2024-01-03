@@ -15,7 +15,7 @@ website:
         contents:
           - linear.qmd
           - probit.qmd
-          - negative_binomial.qmd
+          - negative-binomial.qmd
           - logistic.qmd
           - poisson.qmd
           - zipoisson.qmd

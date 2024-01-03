@@ -17,7 +17,6 @@ For each of the 6 regression types, we implemented our own functions without usi
 
 We also explored and checked the assumptions of each model, and discussed the implications of breaking those assumptions.
 
-
 **Credits**
 
-- Favicon from [Freepik](https://www.flaticon.com/free-icon/regression_9850888?term=regression&page=1&position=6&origin=search&related_id=9850888)
+-   Favicon from [Freepik](https://www.flaticon.com/free-icon/regression_9850888?term=regression&page=1&position=6&origin=search&related_id=9850888)

@@ -1,0 +1,4 @@
+- source: project
+  netlify:
+    - id: cad7189d-71d6-46b2-b87f-0de6a889bdfc
+      url: 'https://diy-regression-stats.netlify.app'
