@@ -2,11 +2,9 @@
 
 [See the DIY implementations here!](https://diy-regression-stats.netlify.app/)
 
-DIY Regression project for Stats Consulting
+DIY Regression project for Stats Consulting Fall 2023
 
-Fall 2023
-
-Jasmine Siswandjo and Saumya Seth
+By Jasmine Siswandjo and Saumya Seth
 
 1. Linear regression - Saumya
 2. Probit regression - Saumya
