@@ -1,0 +1,367 @@
+---
+title: "Probit"
+---
+
+```{r, message=F, echo=F}
+library(knitr)
+opts_chunk$set(fig.width = 5, fig.height = 4, fig.align = "left", out.width = "8.5in")
+
+set.seed(123)
+library(tidyverse)
+library(dplyr)
+library(MASS)
+library(alr4)
+library(pscl)
+library(glmbb) # for crabs data
+library(kableExtra)
+library(lmtest)
+```
+
+## Introduction
+
+The Probit model classifies observations into one of two categories (for simple Probit Regression; multinomial Probit Regression can classify observations into more than two categories) by estimating the probability that an observation with particular characteristics is more likely to fall in one category or another.
+
+## Uses
+
+Probit Regression is primarily used when the outcome is binary - thus, it is mainly used for classification problems. When covariates are continuous, there are infinite possible values for the outcome if using Linear Regression; Logistic and Probit Regressions are therefore better than Linear if we need to bound the outcome to 0 and 1.
+
+Logistic Regression and Probit Regressions give almost identical results - they just have different link functions. The decision to chose one over the other is discipline-dependent, and it is said that Logistic Regression is better when one has extreme independent variables (where one particular small or large value will overwhelmingly determine if your outcome is 0 or 1 - overriding the effect of most other variables). However, there is no 'right' answer to this debate.
+
+## Assumptions
+
+-   The outcome is binary
+-   The z-score of the outcome and the predictor variables have a linear relationship
+-   The errors are normally distributed and are independent of one another
+
+## Our Probit Regression Implementation
+
+Our Probit Regression implementation: (Note that we use bootstrapping to estimate standard errors)
+
+```{r}
+probit_regression <- function(data, ..., y) {
+  n <- nrow(data)
+  x_parameters <- c(...)
+  # defining the predictor matrix
+  X <-
+    matrix(c(rep(1, n), x_parameters),
+      nrow = n,
+      ncol = ncol(data)
+    )
+  # defining the outcome matrix
+  Y <- matrix(y, nrow = n, ncol = 1)
+  # defining the log likelihood
+  probit.loglikelihood <- function(beta, X, Y) {
+    eta <- X %*% beta
+    p <- pnorm(eta)
+    loglikelihood <- -sum((1 - Y) * log(1 - p) + Y * log(p))
+    return(loglikelihood)
+  }
+  # starting with an initial guess of the parameter values
+  initial_guess <- matrix(0, nrow = ncol(data), ncol = 1)
+  # using 'optim' to maximize the log likelihood
+  result <- optim(
+    initial_guess,
+    fn = probit.loglikelihood,
+    X = X,
+    Y = Y,
+    method = NULL
+  )$par
+  # creating a vector 'estimate' for the beta coefficients
+  estimate <- result
+  # bootstrapping to estimate the standard errors
+  num_bootstraps <- 10
+  result_bootstrap <-
+    matrix(0, nrow = num_bootstraps, ncol = ncol(X))
+  for (i in 1:num_bootstraps) {
+    sample_indices <- sample(nrow(data), replace = TRUE)
+    bootstrap_data <- data[sample_indices, ]
+    X_bootstrap <-
+      matrix(
+        c(rep(1, nrow(bootstrap_data)), x_parameters),
+        nrow = nrow(bootstrap_data),
+        ncol = ncol(bootstrap_data)
+      )
+    Y_bootstrap <-
+      matrix(bootstrap_data$y,
+        nrow = nrow(bootstrap_data),
+        ncol = 1
+      )
+    initial_guess_bootstrap <-
+      matrix(0, nrow = ncol(bootstrap_data), ncol = 1)
+    result_bootstrap[i, ] <- optim(
+      initial_guess_bootstrap,
+      probit.loglikelihood,
+      X = X_bootstrap,
+      Y = Y_bootstrap,
+      method = NULL
+    )$par
+  }
+  # finding the standard deviation of the bootstrapped betas to find the
+  # standard error of the coefficients
+  se <- apply(result_bootstrap, 2, sd)
+  # calculating the z-statistic
+  z <- estimate / se
+  # defining the degrees of freedom
+  df <- nrow(X) - ncol(X)
+  # calculating the p-value
+  p <- 2 * pnorm(z, lower.tail = FALSE)
+  # defining the row names of the output data frame
+  rownames <- c()
+  for (i in 1:((ncol(X)) - 1)) {
+    rownames[i] <- i
+  }
+  data_to_plot <- data[, -which(colnames(data) == "y")]
+  data_to_plot$y_zscore <- qnorm(pnorm(data$y))
+  test <- list(
+    pairs(data_to_plot, main = "Assessing Linearity of Predictors\n with z score of Outcome")
+  )
+  impl <- data.frame(
+    Estimate = estimate,
+    Std.Error = se,
+    z.value = z,
+    p.value = p,
+    DegOfFreedom = c(df, rep(NA, ncol(X) - 1)),
+    row.names = c("(Intercept)", paste0(rep("x", ncol(
+      X
+    ) - 1), rownames))
+  )
+  # returning a data frame akin to the glm probit output
+  return(list(test, impl))
+}
+```
+
+Creating a function to predict the outcomes based on our Probit Regression implementation.
+
+```{r}
+predict_probit <-
+  function(data, ..., y, implementation_probit) {
+    n <-
+      implementation_probit$DegOfFreedom[1] + nrow(implementation_probit)
+    input_covariate_values <- c(...)
+    X <-
+      matrix(
+        c(rep(1, n), input_covariate_values),
+        nrow = n,
+        ncol = nrow(implementation_probit)
+      )
+    Y <- matrix(y, nrow = n, ncol = 1)
+    estimate <-
+      implementation_probit[1:nrow(implementation_probit), 1]
+    pred <- ifelse(X %*% estimate < 0, 0, 1)
+    return(pred)
+  }
+```
+
+Creating a test data set which meets all Probit Regression assumptions to check if our function works.
+
+```{r}
+test_probit_regression_data <- data.frame(
+  x1 = rnorm(1000, 0, 1),
+  x2 = rnorm(1000, 0, 1)
+)
+error <- rnorm(1000, mean = 0, sd = 0.5)
+test_probit_regression_data$y <- test_probit_regression_data$x1 +
+  0.5 * test_probit_regression_data$x2 +
+  error
+test_probit_regression_data$y <-
+  qnorm(pnorm(test_probit_regression_data$y))
+
+plot(test_probit_regression_data$x1, test_probit_regression_data$y,
+  main = "The z score of y and x1 have a linear relationship", cex.main = 0.6,
+  xlab = "x1", ylab = "y"
+)
+plot(test_probit_regression_data$x1, test_probit_regression_data$y,
+  main = "The z score of y and x2 have a linear relationship", cex.main = 0.6,
+  xlab = "x2", ylab = "y"
+)
+
+test_probit_regression_data$y <-
+  ifelse(test_probit_regression_data$y < 0, 0, 1)
+
+plot(density(error), main = "Errors are normally distributed")
+```
+
+## Testing Assumptions for Probit Regression
+
+```{r}
+test_probit_reg <- probit_regression(test_probit_regression_data,
+  test_probit_regression_data$x1,
+  test_probit_regression_data$x2,
+  y = test_probit_regression_data$y
+)[[1]]
+```
+
+Applying the function we created on this data set.
+
+```{r}
+our_implementation_probit <-
+  probit_regression(
+    test_probit_regression_data,
+    test_probit_regression_data$x1,
+    test_probit_regression_data$x2,
+    y = test_probit_regression_data$y
+  )[[2]]
+our_implementation_probit
+```
+
+Comparing our output to R's output.
+
+```{r}
+r_implementation_probit <-
+  summary(glm(y ~ x1 + x2,
+    data = test_probit_regression_data,
+    family = binomial(link = "probit")
+  ))
+r_implementation_probit
+```
+
+We note that the results are similar.
+
+We followed all assumptions of Probit Regression in regressing y on x1 and x2 using the test_probit_regression_data data set. We will compare the residual of this regression to that of all the others where assumptions will be broken.
+
+The accuracy for where all assumptions are met:
+
+```{r}
+prediction_all_assumptions_met <-
+  as.numeric(
+    predict_probit(
+      test_probit_regression_data,
+      test_probit_regression_data$x1,
+      test_probit_regression_data$x2,
+      y = test_probit_regression_data$y,
+      implementation_probit = our_implementation_probit
+    )
+  )
+accuracy_all_assumptions_met <-
+  sum(prediction_all_assumptions_met == test_probit_regression_data$y) / 1000
+accuracy_all_assumptions_met # high accuracy here
+```
+
+## Breaking Assumptions
+
+### Breaking the assumption that the relationship between the predictors and the z score of y is linear
+
+Creating a data set where, if we apply Probit Regression, this assumption will be broken.
+
+```{r}
+test_probit_regression_data_not_linear <-
+  data.frame(
+    x1 = rnorm(1000, 0, 1),
+    x2 = rnorm(1000, 0, 1)
+  )
+eror <- rnorm(1000, mean = 0, sd = 0.5)
+test_probit_regression_data_not_linear$y <-
+  test_probit_regression_data_not_linear$x1^2 + error
+test_probit_regression_data_not_linear$y <-
+  qnorm(pnorm(test_probit_regression_data_not_linear$y))
+
+plot(test_probit_regression_data_not_linear$x1, test_probit_regression_data_not_linear$y,
+  main = "The z score of y and x1 \ndo not have a linear relationship",
+  xlab = "x1", ylab = "y"
+)
+
+test_probit_regression_data_not_linear$y <-
+  ifelse(test_probit_regression_data_not_linear$y < 0, 0, 1)
+```
+
+Using our implementation of glm Probit to fit the model and get an accuracy measure.
+
+```{r}
+our_implementation_probit_not_linear <-
+  probit_regression(
+    test_probit_regression_data_not_linear,
+    test_probit_regression_data_not_linear$x1,
+    test_probit_regression_data_not_linear$x2,
+    y = test_probit_regression_data_not_linear$y
+  )[[2]]
+
+prediction_not_linear <-
+  as.numeric(
+    predict_probit(
+      test_probit_regression_data_not_linear,
+      test_probit_regression_data_not_linear$x1,
+      test_probit_regression_data_not_linear$x2,
+      y = test_probit_regression_data_not_linear$y,
+      implementation_probit = our_implementation_probit_not_linear
+    )
+  )
+accuracy_not_linear <-
+  sum(prediction_not_linear == test_probit_regression_data_not_linear$y) / 1000
+accuracy_not_linear # lower accuracy here
+```
+
+We note that Probit Regression is not performing as well in this case.
+
+### Breaking the assumption that the errors are normally distributed
+
+Creating a data set where, if we apply Probit Regression, this assumption will be broken.
+
+```{r}
+test_probit_regression_data_not_normally_dist <-
+  data.frame(
+    x1 = rnorm(1000, 0, 1),
+    x2 = rnorm(1000, 0, 1)
+  )
+error <- runif(1000, min = -1, max = 1)
+test_probit_regression_data_not_normally_dist$y <-
+  test_probit_regression_data_not_normally_dist$x1 + error
+test_probit_regression_data_not_normally_dist$y <-
+  qnorm(pnorm(test_probit_regression_data_not_normally_dist$y))
+
+plot(density(error), main = "Errors are not normally distributed")
+
+test_probit_regression_data_not_normally_dist$y <-
+  ifelse(test_probit_regression_data_not_normally_dist$y < 0, 0, 1)
+```
+
+Using our implementation of glm Probit to fit the model and get an accuracy measure.
+
+```{r}
+our_implementation_probit_not_normally_dist <-
+  probit_regression(
+    test_probit_regression_data_not_normally_dist,
+    test_probit_regression_data_not_normally_dist$x1,
+    test_probit_regression_data_not_normally_dist$x2,
+    y = test_probit_regression_data_not_normally_dist$y
+  )[[2]]
+
+prediction_not_normally_dist <-
+  as.numeric(
+    predict_probit(
+      test_probit_regression_data_not_normally_dist,
+      test_probit_regression_data_not_normally_dist$x1,
+      test_probit_regression_data_not_normally_dist$x2,
+      y = test_probit_regression_data_not_normally_dist$y,
+      implementation_probit = our_implementation_probit_not_normally_dist
+    )
+  )
+accuracy_not_normally_dist <-
+  sum(prediction_not_normally_dist == test_probit_regression_data_not_normally_dist$y) / 1000
+accuracy_not_normally_dist # lower accuracy here
+```
+
+We note that Probit Regression is not performing as well in this case.
+
+## Comparing accuracies when all assumptions were met versus not
+
+```{r}
+accuracy_comparison <-
+  t(
+    data.frame(
+      accuracy_all_assumptions_met,
+      accuracy_not_linear,
+      accuracy_not_normally_dist
+    )
+  )
+row.names(accuracy_comparison) <- c(
+  "All assumptions met",
+  "Linearity assumption violated",
+  "Normality assumption violated"
+)
+colnames(accuracy_comparison) <- "Accuracy"
+accuracy_comparison
+```
+
+## Conclusion
+
+The implementation of Probit Regression where all assumptions are met performs the best; i.e. it gives us predictions which are more accurate to the true outcome values.

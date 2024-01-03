@@ -1,0 +1,19 @@
+---
+title: "setup"
+---
+
+
+```{r, message=F}
+library(knitr)
+opts_chunk$set(fig.width = 5, fig.height = 4, fig.align = "left", out.width = "8.5in")
+
+set.seed(123)
+library(tidyverse)
+library(dplyr)
+library(MASS)
+library(alr4)
+library(pscl)
+library(glmbb) # for crabs data
+library(kableExtra)
+library(lmtest)
+```

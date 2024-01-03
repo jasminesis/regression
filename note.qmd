@@ -1,0 +1,9 @@
+---
+title: ""
+---
+
+# A Note
+
+In determining how appropriate a particular regression model is for a problem, we think it might be valuable to move beyond a 'assumption #1 met' or 'assumption #1 not met' assessment. Instead, it might be more helpful for researchers to explore their data, and test assumptions on their own to determine 'what level of assumption-violation' might they be willing to accept given they are experts in their fields and have domain-specific contextual knowledge. This is not to say that assumptions can be violated without consequences.
+
+Also, it might be difficult to determine the thresholds for having actually met or not met an assumption. Thus, a function which simply outputs a 'yes' or 'no' to whether assumptions for a particular regression implementation have been met did not seem appropriate. We therefore, test assumptions by intentionally breaking them and noting the extent of bias-ness that they result.

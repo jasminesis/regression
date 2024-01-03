@@ -1,0 +1,33 @@
+project:
+  type: website
+
+website:
+  title: "DIY Regression"
+  favicon: favicon/regression.png
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+  sidebar:
+    style: "docked"
+    contents:
+      - section: "Regression Types"
+        contents:
+          - linear.qmd
+          - probit.qmd
+          - negative_binomial.qmd
+          - logistic.qmd
+          - poisson.qmd
+          - zipoisson.qmd
+      - href: note.qmd
+        text: "A Note"
+
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+editor: visual
+

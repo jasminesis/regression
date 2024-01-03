@@ -1,0 +1,23 @@
+---
+title: "DIY Regression"
+---
+
+DIY Regression project for NYU Stats Consulting - Fall 2023
+
+By Jasmine Siswandjo and Saumya Seth
+
+1.  Linear regression
+2.  Probit regression
+3.  Negative Binomial regression
+4.  Logistic regression
+5.  Poisson regression\
+6.  Zero-inflated Poisson regression
+
+For each of the 6 regression types, we implemented our own functions without using in-built regression packages in R. We estimated coefficients of the predictors, estimated their standard errors, and calculated the p-values of said models.
+
+We also explored and checked the assumptions of each model, and discussed the implications of breaking those assumptions.
+
+
+**Credits**
+
+- Favicon from [Freepik](https://www.flaticon.com/free-icon/regression_9850888?term=regression&page=1&position=6&origin=search&related_id=9850888)
