@@ -1,4 +1,6 @@
-# [Regression](https://diy-regression-stats.netlify.app/)
+# Regression
+
+[See the DIY implementations here!](https://diy-regression-stats.netlify.app/)
 
 DIY Regression project for Stats Consulting
 Fall 2023
