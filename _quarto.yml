@@ -8,17 +8,40 @@ website:
     left:
       - href: index.qmd
         text: Home
+      - text: "Regression Types"
+        menu:
+          - href: regressions/linear.qmd
+            text: linear
+          - href: regressions/probit.qmd
+            text: probit
+          - href: regressions/negative-binomial.qmd
+            text: negative binomial
+          - href: regressions/logistic.qmd
+            text: logistic
+          - href: regressions/poisson.qmd
+            text: poisson
+          - href: regressions/zipoisson.qmd
+            text: zero-inflated poisson
+    tools:
+      - icon: github
+        url: https://github.com/jasminesis/regression
   sidebar:
     style: "docked"
     contents:
       - section: "Regression Types"
         contents:
-          - linear.qmd
-          - probit.qmd
-          - negative-binomial.qmd
-          - logistic.qmd
-          - poisson.qmd
-          - zipoisson.qmd
+          - href: regressions/linear.qmd
+            text: linear
+          - href: regressions/probit.qmd
+            text: probit
+          - href: regressions/negative-binomial.qmd
+            text: negative binomial
+          - href: regressions/logistic.qmd
+            text: logistic
+          - href: regressions/poisson.qmd
+            text: poisson
+          - href: regressions/zipoisson.qmd
+            text: zero-inflated poisson
       - href: note.qmd
         text: "A Note"
 
@@ -29,3 +52,6 @@ format:
     toc: true
 
 editor: visual
+
+execute:
+  freeze: auto
