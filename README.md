@@ -23,4 +23,5 @@ By Jasmine Siswandjo and Saumya Seth
 ## Instructions on publishing
 
 `git checkout website`
+
 `quarto netlify publish`
