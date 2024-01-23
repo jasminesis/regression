@@ -1,8 +1,8 @@
-# Regression
+# Regression Implementations in R
 
-[See the DIY implementations in R here!](https://diy-regression-stats.netlify.app/)
+[See the implementations in R here!](https://diy-regression-stats.netlify.app/)
 
-## Regression implementation project for NYU Stats Consulting Fall 2023
+For NYU Stats Consulting Fall 2023 (taught by [George Perrett](https://github.com/gperrett/))
 
 By Jasmine Siswandjo and Saumya Seth
 
@@ -20,8 +20,9 @@ By Jasmine Siswandjo and Saumya Seth
 - To discuss the implications of breaking assumptions for the models
 - To discuss the applications of the models and compare and contrast situations where certain models may perform better than others
 
-## Instructions on publishing
+## Instructions on publishing to website
 
-`git checkout website`
+There are two branches in this repo: `main` and `website`. They are completely different, so never merge the two! `website` contains a Quarto website project, and should be published by following these steps.
 
-`quarto netlify publish`
+1. `git checkout website`
+2. `quarto netlify publish`
